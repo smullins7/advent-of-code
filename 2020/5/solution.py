@@ -1,35 +1,11 @@
-def mid(a, b):
-    return round((a + b) / 2)
+import re
 
-
-def bisect(seat, c):
-    if c == "F":
-        lower, upper = seat["rows"]
-        seat["rows"] = lower, mid(lower, upper)
-    elif c == "B":
-        lower, upper = seat["rows"]
-        m = mid(lower, upper)
-        seat["rows"] = m if m != lower else upper, upper
-    elif c == "L":
-        lower, upper = seat["columns"]
-        seat["columns"] = lower, mid(lower, upper)
-    elif c == "R":
-        lower, upper = seat["columns"]
-        m = mid(lower, upper)
-        seat["columns"] = m if m != lower else upper, upper
+ZEROS = re.compile("[FL]")
+ONES = re.compile("[BR]")
 
 
 def part1(inputs):
-    seat_ids = []
-    for assignment in inputs:
-        seat = {
-            "rows": (0, 127),
-            "columns": (0, 7),
-        }
-        for cmd in assignment:
-            bisect(seat, cmd)
-        seat_ids.append(seat["rows"][0] * 8 + seat["columns"][0])
-    return seat_ids
+    return [int(ONES.sub("1", ZEROS.sub("0", assignment)), 2) for assignment in inputs]
 
 
 def part2(inputs):

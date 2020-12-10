@@ -1,11 +1,15 @@
-import sys
+from itertools import permutations
+
+PHASES = list(range(0,5))
+PHASES2 = list(range(5,10))
 
 
 class Program(object):
 
-    def __init__(self, program):
+    def __init__(self, program, stores=None):
         self.program = program
         self.pointer = 0
+        self.stores = stores or []
 
     def next(self, mode="1"):
         v = self.program[self.pointer]
@@ -23,6 +27,12 @@ class Program(object):
     def jump(self, pointer):
         self.pointer = int(pointer)
 
+    def input(self):
+        return self.stores.pop(0) if self.stores else input()
+
+    def output(self, value):
+        self.stores.append(value)
+
 
 def add(program, modes):
     first, second, dest = program.next(modes[0]), program.next(modes[1]), program.next()
@@ -36,12 +46,12 @@ def multiply(program, modes):
 
 def store(program, modes):
     dest = program.next()
-    program.write(dest, sys.stdin.readline(1))
+    program.write(dest, program.input())
 
 
 def output(program, modes):
     first = program.next(modes[0])
-    print(first)
+    program.output(first)
 
 
 def jump_true(program, modes):
@@ -95,53 +105,50 @@ def parse_instruction(instruction):
     return "0" + opcode if len(opcode) == 1 else opcode, modes[::-1]
 
 
-def proc(program, cursor):
-    instruction = program[cursor]
-    opcode = instruction[len(instruction)-2:]
-    modes = instruction[:len(instruction)-len(opcode)]
-    if opcode in ("01", "1", "02", "2"):
-        arg1 = program[cursor + 1]
-        arg2 = program[cursor + 2]
-        dest = program[cursor + 3]
-        if not modes or modes[-1] == "0":
-            arg1 = program[int(arg1)]
-        if not modes or len(modes) == 1 or modes[0] == "0":
-            arg2 = program[int(arg2)]
-        program[int(dest)] = str(OP_CODES[opcode](program, arg1, arg2))
-        cursor += 3
-
-    elif opcode == "99":
-        return
-
-    else:
-        arg = program[cursor + 1]
-        if opcode in ("04", "4") and (not modes or modes == "0"):
-            arg = program[int(arg)]
-        OP_CODES[opcode](program, arg)
-        cursor += 1
-
-    proc(program, cursor + 1)
-
-
-def part1(inputs):
-    proc(inputs, 0)
-
-
-def part2(program):
+def run(program):
     instruction = program.next()
     opcode, modes = parse_instruction(instruction)
     if opcode == "99":
         return
     OP_CODES[opcode](program, modes)
-    part2(program)
+    run(program)
+
+
+def part1(inputs):
+    max_thruster_output = 0
+    for phases in permutations(PHASES):
+        output = None
+        for phase in phases:
+            p = Program(inputs, stores=[phase, output or 0])
+            output = run(p)
+
+        max_thruster_output = max(int(output), max_thruster_output)
+
+    return max_thruster_output
+
+
+def part2(inputs):
+    max_thruster_output = 0
+    for phases in [(9,8,7,6,5)]:#permutations(PHASES2):
+        p = None
+        l = list(phases)
+        while True:
+            if l:
+                phase = l.pop(0)
+            if not p:
+                p = Program(inputs, stores=[phase, 0])
+            elif phase:
+                p.stores.insert(0, phase)
+            run(p)
+            if not l and len(p.stores) == 1:
+                break
+        max_thruster_output = max(int(p.stores[-1]), max_thruster_output)
+
+    return max_thruster_output
 
 
 if __name__ == "__main__":
-    inputs = [line.strip() for line in open("./input.txt")][0].split(",")
-
-    program = Program(inputs)
-    print(part2(program))
-
-    #program = Program(inputs)
-    #print(part2(program))
+    inputs = [line.strip() for line in open("./example.txt")][0].split(",")
+    #print(part1(inputs))
+    print(part2(inputs))
 

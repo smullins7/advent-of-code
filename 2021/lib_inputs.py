@@ -1,2 +1,9 @@
-def get_input(day, puzzle=1, coerce=str):
-    return [coerce(x.strip()) for x in open(f"./inputs/day-{day}-{puzzle}.txt").readlines()]
+import re
+
+DAY_RE = re.compile(r"^.*/day_(\d+)\.py$")
+
+
+def get_input(filename, puzzle=1, coerce=str):
+    parsed = [coerce(x.strip()) for x in open(f"./inputs/day-{DAY_RE.match(filename).group(1)}-{puzzle}.txt").readlines()]
+    # some puzzle inputs are only a single line and meant to be split on some delimiter
+    return parsed if len(parsed) > 1 else parsed[0]

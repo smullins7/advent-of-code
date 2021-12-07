@@ -27,11 +27,11 @@ def parse(line):
 
 
 def part_one(data):
-  return 0
+    return 0
 
 
 def part_two(data):
-  return 0
+    return 0
 
 
 for puzzle in ("sample", 1):
@@ -40,4 +40,5 @@ for puzzle in ("sample", 1):
     print(f"Part 2: Input {puzzle}, {part_two(data)}")
 
 EOT
+  chmod +x ${PYTHON_FILE}
 fi

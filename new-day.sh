@@ -34,10 +34,11 @@ def part_two(data):
     return 0
 
 
-for puzzle in ("sample", 1):
-    data = get_input(__file__, puzzle=puzzle, coerce=parse)
-    print(f"Part 1: Input {puzzle}, {part_one(data)}")
-    print(f"Part 2: Input {puzzle}, {part_two(data)}")
+if __name__ == "__main__":
+    for puzzle in ("sample", 1):
+        data = get_input(__file__, puzzle=puzzle, coerce=parse)
+        print(f"Part 1: Input {puzzle}, {part_one(data)}")
+        print(f"Part 2: Input {puzzle}, {part_two(data)}")
 
 EOT
   chmod +x ${PYTHON_FILE}

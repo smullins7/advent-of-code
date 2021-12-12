@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import os
 import re
 from dataclasses import dataclass
-from typing import List
+from collections import defaultdict
+from typing import List, Set
 
 DAY_RE = re.compile(r"^.*/day_(\d+)\.py$")
 BASE_PATH = os.path.dirname(__file__)
 
 
 def day_filename(filename, puzzle):
-    return  f"{BASE_PATH}/inputs/day-{DAY_RE.match(filename).group(1)}-{puzzle}.txt"
+    return f"{BASE_PATH}/inputs/day-{DAY_RE.match(filename).group(1)}-{puzzle}.txt"
 
 
 def get_input(filename, puzzle=1, coerce=str):
@@ -75,3 +78,42 @@ class Grid:
 
     def __iter__(self):
         return iter(self.rows)
+
+
+@dataclass
+class Node:
+    value: str
+    neighbors: Set[Node]
+
+    def add_path(self, node):
+        self.neighbors.add(node)
+        node.neighbors.add(self)
+
+    @staticmethod
+    def from_value(value):
+        return Node(value, set())
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __eq__(self, o: Node) -> bool:
+        return self.value == o.value
+
+    def __iter__(self):
+        return iter(self.neighbors)
+
+
+def to_nodes(filename, puzzle=1) -> Node:
+    nodes = {}
+
+    def _get(value) -> Node:
+        if value not in nodes:
+            nodes[value] = Node.from_value(value)
+        return nodes[value]
+
+    for line in open(day_filename(filename, puzzle)).readlines():
+        left, right = line.strip().split("-")
+        left_node = _get(left)
+        right_node = _get(right)
+        left_node.add_path(right_node)
+    return nodes["start"]

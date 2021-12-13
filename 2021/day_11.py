@@ -44,5 +44,5 @@ def part_two(grid):
 if __name__ == "__main__":
     for puzzle in ("sample", 1):
         for f in (part_one, part_two):
-            grid = to_grid(__file__, puzzle=puzzle, coerce=int)
+            grid = to_grid(__file__, puzzle=puzzle)
             print(f"{f.__name__}: Input {puzzle}, {f(grid)}")

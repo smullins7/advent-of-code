@@ -20,7 +20,7 @@ def get_input(filename, puzzle=1, coerce=str):
     return parsed if len(parsed) > 1 else parsed[0]
 
 
-def to_grid(filename, puzzle=1, coerce=str):
+def to_grid(filename, puzzle=1, coerce=int):
     grid = Grid([])
     for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
         grid.rows.append([Cell(x, y, coerce(c)) for x, c in enumerate(line.strip())])

@@ -1,54 +1,51 @@
 #!/usr/bin/env python3
 
-from lib_inputs import Grid, day_filename, Cell
+from lib_inputs import day_filename
 
 
 def print_grid(grid):
     print("Grid:")
-    for row in grid:
-        print("".join(["#" if cell.value else "." for cell in row]))
+    max_x = max([c[0] for c in grid])
+    max_y = max([c[1] for c in grid])
+    for y in range(max_y + 1):
+        print("".join(["#" if (x, y) in grid else "." for x in range(max_x + 1)]))
 
 
 def to_grid(puzzle=1):
-    grid = Grid([])
+    grid = set()
     lines = open(day_filename(__file__, puzzle)).readlines()
     for y, line in enumerate(lines):
         line = line.strip()
         if not line:
             break
-        x, y = map(int, line.split(","))
-        cell = Cell(x, y, 1)
-        while y > len(grid.rows) - 1:
-            grid.rows.append([])
-        while x > len(grid.rows[y]) - 1:
-            grid.rows[y].append(Cell(len(grid.rows[y]), y, 0))
-        grid.rows[y][x] = cell
+        cx, cy = map(int, line.split(","))
+        grid.add((cx,cy))
 
     folds = [line.strip().split("fold along ")[-1] for line in lines[y+1:]]
-
-    target_x = (max([int(cmd.split("=")[-1]) for cmd in folds if cmd.startswith("x=")]) * 2) + 1
-
-    for y, row in enumerate(grid.rows):
-        while len(row) != target_x:
-            row.append(Cell(len(row), y, 0))
     return grid, folds
 
 
 def fold(grid, cmd):
-    folded_grid = Grid([])
-    if cmd.startswith("y"):
-        for y in range(len(grid.rows) // 2):
-            row = []
-            for up, down in zip(grid.rows[y], grid.rows[len(grid.rows) - 1 - y]):
-                row.append(Cell(up.x, up.y, max(up.value, down.value)))
-            folded_grid.rows.append(row)
-    else:
-        for row in grid.rows:
-            length = int(cmd.split("=")[-1])
-            new_row = []
-            for left, right in zip(row[:length], reversed(row[length + 1:])):
-                new_row.append(Cell(left.x, left.y, max(left.value, right.value)))
-            folded_grid.rows.append(new_row)
+    folded_grid = set()
+    direction, length = cmd.split("=")
+    length = int(length)
+    for (x, y) in grid:
+        if direction == "x":
+            if x == length:
+                continue
+            if x < length:
+                folded_grid.add((x, y))
+            else:
+                folded_grid.add((2 * length - x, y))
+
+        else:
+            if y == length:
+                continue
+            if y < length:
+                folded_grid.add((x, y))
+            else:
+                folded_grid.add((x, 2 * length - y))
+
     return folded_grid
 
 
@@ -57,12 +54,7 @@ def part_one(data):
     for cmd in fold_cmds[:1]:
         folded_grid = fold(grid, cmd)
         grid = folded_grid
-    dots = 0
-    for row in folded_grid.rows:
-        for cell in row:
-            if cell.value == 1:
-                dots += 1
-    return dots
+    return len(folded_grid)
 
 
 def part_two(data):

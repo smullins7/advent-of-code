@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
-from collections import defaultdict
 from typing import List, Set
 
 DAY_RE = re.compile(r"^.*/day_(\d+)\.py$")

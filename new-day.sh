@@ -17,7 +17,7 @@ fi
 if test -f "${SAMPLE_FILE}"; then
     echo "${SAMPLE_FILE} exists, not touching"
 else
-  touch ${INPUT_FILE}
+  touch ${SAMPLE_FILE}
 fi
 
 if test -f "${PYTHON_FILE}"; then

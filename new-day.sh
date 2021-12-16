@@ -4,6 +4,7 @@ YEAR=$(date +%Y)
 DAY=$(date +'%-d')
 BASE_DIR=$(dirname "$0")
 INPUT_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}-1.txt
+SAMPLE_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}-sample.txt
 PYTHON_FILE=${BASE_DIR}/${YEAR}/day_${DAY}.py
 
 if test -f "${INPUT_FILE}"; then
@@ -11,6 +12,12 @@ if test -f "${INPUT_FILE}"; then
 else
   # Get today's puzzle input
   curl -s https://adventofcode.com/${YEAR}/day/${DAY}/input --cookie "session=$(cat .session)" -o ${INPUT_FILE}
+fi
+
+if test -f "${SAMPLE_FILE}"; then
+    echo "${SAMPLE_FILE} exists, not touching"
+else
+  touch ${INPUT_FILE}
 fi
 
 if test -f "${PYTHON_FILE}"; then

@@ -19,7 +19,7 @@ def get_input(filename, puzzle=1, coerce=str):
     return parsed if len(parsed) > 1 else parsed[0]
 
 
-def to_grid(filename, puzzle=1, coerce=int):
+def to_grid(filename, puzzle=1, coerce=int) -> Grid:
     grid = Grid([])
     for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
         grid.rows.append([Cell(x, y, coerce(c)) for x, c in enumerate(line.strip())])
@@ -43,6 +43,9 @@ class Grid:
     x and y are never negative, so this does not resemble a numerical graph.
     """
     rows: List[List[Cell]]
+
+    def find_neighbors(self, cell) -> List[Cell]:
+        return self.find_adjacency(cell.x, cell.y)
 
     def find_adjacency(self, x, y) -> List[Cell]:
         adjacency = []

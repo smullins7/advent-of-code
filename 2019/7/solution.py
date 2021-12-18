@@ -111,6 +111,8 @@ def run(program):
     if opcode == "99":
         return
     OP_CODES[opcode](program, modes)
+    if opcode == "04":
+        return
     run(program)
 
 
@@ -129,20 +131,28 @@ def part1(inputs):
 
 def part2(inputs):
     max_thruster_output = 0
-    for phases in [(9,8,7,6,5)]:#permutations(PHASES2):
-        p = None
+    for phases in permutations(PHASES2):
         l = list(phases)
+        amp_a = Program(inputs, stores=[l[0], 0])
+
+        amp_b = Program(list(inputs), stores=[l[1]])
+        amp_c = Program(list(inputs), stores=[l[2]])
+        amp_d = Program(list(inputs), stores=[l[3]])
+        amp_e = Program(list(inputs), stores=[l[4]])
         while True:
-            if l:
-                phase = l.pop(0)
-            if not p:
-                p = Program(inputs, stores=[phase, 0])
-            elif phase:
-                p.stores.insert(0, phase)
-            run(p)
-            if not l and len(p.stores) == 1:
+            run(amp_a)
+            amp_b.stores.insert(0, amp_a.stores.pop())
+            run(amp_b)
+            amp_c.stores.insert(0, amp_b.stores.pop())
+            run(amp_c)
+            amp_d.stores.insert(0, amp_c.stores.pop())
+            run(amp_d)
+            amp_e.stores.insert(0, amp_d.stores.pop())
+            run(amp_e)
+            if amp_e.program[amp_e.pointer] == "99":
                 break
-        max_thruster_output = max(int(p.stores[-1]), max_thruster_output)
+            amp_a.stores.insert(0, amp_e.stores.pop())
+        max_thruster_output = max(int(amp_e.stores[0]), max_thruster_output)
 
     return max_thruster_output
 

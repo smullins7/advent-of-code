@@ -33,6 +33,7 @@ def part_one(data):
 
 @dataclass(unsafe_hash=True)
 class CubeRange:
+    is_on: bool
     min_x: int
     max_x: int
     min_y: int
@@ -41,15 +42,20 @@ class CubeRange:
     max_z: int
 
     def overlap(self, other):
-        if (other.min_x <= self.min_x <= other.max_x or other.min_x <= self.max_x <= other.max_x and
-                other.min_y <= self.min_y <= other.max_y or other.min_y <= self.max_y <= other.max_y and
-                other.min_z <= self.min_z <= other.max_z or other.min_z <= self.max_z <= other.max_z):
-            return CubeRange(max(self.min_x, other.min_x), min(self.max_x, other.max_x),
-                             max(self.min_y, other.min_y), min(self.max_y, other.max_y),
-                             max(self.min_z, other.min_z), min(self.max_z, other.max_z))
+        min_x, max_x = max(self.min_x, other.min_x), min(self.max_x, other.max_x)
+        min_y, max_y = max(self.min_y, other.min_y), min(self.max_y, other.max_y)
+        min_z, max_z = max(self.min_z, other.min_z), min(self.max_z, other.max_z)
+        if max_x >= min_x and max_y >= min_y and max_z >= min_z:
+            return CubeRange(self._is_overlap_on(other), min_x, max_x, min_y, max_y, min_z, max_z)
 
-    def size(self):
-        return (self.max_x - self.min_x + 1) * (self.max_y - self.min_y + 1) * (self.max_z - self.min_z + 1)
+    def _is_overlap_on(self, other):
+        if self.is_on and other.is_on:
+            return False
+        return (not self.is_on and not other.is_on) or other.is_on
+
+    def size(self) -> int:
+        val = (self.max_x - self.min_x + 1) * (self.max_y - self.min_y + 1) * (self.max_z - self.min_z + 1)
+        return val if self.is_on else -val
 
 
 def find_overlaps(on_ranges, incoming_range):
@@ -62,30 +68,67 @@ def find_overlaps(on_ranges, incoming_range):
     return overlaps
 
 
-def subtract(cube_range, removes):
-    return []
-
-
 def part_two(data):
+    """
+    first attempt....
     on_ranges = set()
-    off_ranges = set()
+    blah = set()
     for (is_on, ranges) in data:
         x_r, y_r, z_r = ranges
         cube_range = CubeRange(x_r[0], x_r[1], y_r[0], y_r[1], z_r[0], z_r[1])
-        overlaps = find_overlaps(on_ranges, cube_range)
+        for overlapping_range in find_overlaps(on_ranges, cube_range):
+            blah.add(overlapping_range)
         if is_on:
-            if overlaps:
-                [on_ranges.add(r) for r in overlaps]#subtract(cube_range, overlaps)]
-            else:
-                on_ranges.add(cube_range)
-        else:
-            [off_ranges.add(r) for r in overlaps]
+            on_ranges.add(cube_range)
 
-    return sum([r.size() for r in on_ranges]) - sum([r.size() for r in off_ranges])
+    return sum([r.size() for r in on_ranges]) - sum([r.size() for r in blah])
+    """
+    """
+    second attempt...
+    total_size = 0
+    prev = []
+    for (is_on, ranges) in data:
+        x_r, y_r, z_r = ranges
+        cube_range = CubeRange(x_r[0], x_r[1], y_r[0], y_r[1], z_r[0], z_r[1])
+        for prev_cube in prev:
+            overlap = prev_cube.overlap(cube_range)
+            if overlap:
+                total_size -= overlap.size()
+        if is_on:
+            prev.append(cube_range)
+            total_size += cube_range.size()
+    return total_size
+    """
+    on_ranges = []
+    for (is_on, ranges) in data:
+        x_r, y_r, z_r = ranges
+        cube_range = CubeRange(is_on, x_r[0], x_r[1], y_r[0], y_r[1], z_r[0], z_r[1])
+        to_add = []
+        for prev_cube in on_ranges:
+            overlap = prev_cube.overlap(cube_range)
+            if overlap:
+                to_add.append(overlap)
+
+        on_ranges.extend(to_add)
+        if is_on:
+            on_ranges.append(cube_range)
+
+    return sum([r.size() for r in on_ranges])
+
+
+def test(*args):
+    data = [
+        (True, [(10, 12), (10, 12), (10, 12)]),
+        (False, [(10, 11), (10, 11), (10, 11)]),
+        (True, [(10, 11), (10, 11), (10, 11)]),
+    ]
+    cube_range = CubeRange(True, 5, 7, 10, 11, 10, 11)
+    other = CubeRange(True, 7, 9, 110, 111, 110, 111)
+    return cube_range.overlap(other)
 
 
 if __name__ == "__main__":
-    for puzzle in ("sample",):
-        for f in (part_one, part_two):
+    for puzzle in ("sample", 1,):
+        for f in (part_one, part_two,):
             data = get_input(__file__, puzzle=puzzle, coerce=parse)
             print(f"{f.__name__}: Input {puzzle}, {f(data)}")

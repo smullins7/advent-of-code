@@ -38,6 +38,52 @@ def to_grid(filename, puzzle=1, coerce=int) -> Grid:
     return grid
 
 
+def to_sparse_grid(filename, puzzle=1):
+    grid = SparseGrid({})
+    for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
+        for x, c in enumerate(line.strip()):
+            grid.set(x, y, c)
+    return grid
+
+
+@dataclass(unsafe_hash=True)
+class SparseGrid:
+    values: dict
+    max_x: int = 0
+    max_y: int = 0
+    cursor_x: int = 0
+    cursor_y: int = 0
+
+    def set(self, x, y, val):
+        self.values[(x, y)] = val
+        self.max_x = max(self.max_x, x)
+        self.max_y = max(self.max_y, y)
+
+    def get(self, x, y, default=None):
+        return self.values.get((x, y), default)
+
+    def has(self, x, y):
+        return (x, y) in self.values
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            result = self.values[(self.cursor_x, self.cursor_y)]
+            x, y = self.cursor_x, self.cursor_y
+        except KeyError:
+            self.cursor_x = 0
+            self.cursor_y = 0
+            raise StopIteration
+        if self.cursor_x == self.max_x:
+            self.cursor_y += 1
+            self.cursor_x = 0
+        else:
+            self.cursor_x += 1
+        return x, y, result
+
+
 @dataclass(unsafe_hash=True)
 class Cell:
     x: int

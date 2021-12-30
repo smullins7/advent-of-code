@@ -1,7 +1,7 @@
 #!/bin/bash
 
-YEAR=$(date +%Y)
-DAY=$(date +'%-d')
+DAY=${1:-$(date +'%-d')}
+YEAR=${2:-$(date +%Y)}
 BASE_DIR=$(dirname "$0")
 INPUT_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}-1.txt
 SAMPLE_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}-sample.txt

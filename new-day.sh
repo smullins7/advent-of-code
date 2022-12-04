@@ -3,7 +3,7 @@
 DAY=${1:-$(date +'%-d')}
 YEAR=${2:-$(date +%Y)}
 BASE_DIR=$(dirname "$0")
-INPUT_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}-1.txt
+INPUT_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}.txt
 SAMPLE_FILE=${BASE_DIR}/${YEAR}/inputs/day-${DAY}-sample.txt
 PYTHON_FILE=${BASE_DIR}/${YEAR}/day_${DAY}.py
 
@@ -24,13 +24,7 @@ if test -f "${PYTHON_FILE}"; then
   echo "${PYTHON_FILE} exists, not writing stub python file"
 else
   cat <<EOT >> ${PYTHON_FILE}
-#!/usr/bin/env python3
-
 from lib_inputs import get_input
-
-
-def parse(line):
-    return str(line)
 
 
 def part_one(data):
@@ -42,10 +36,9 @@ def part_two(data):
 
 
 if __name__ == "__main__":
-    for puzzle in ("sample", 1):
-        for f in (part_one, part_two):
-            data = get_input(__file__, puzzle=puzzle, coerce=parse)
-            print(f"{f.__name__}: Input {puzzle}, {f(data)}")
+    for f in (part_one, part_two):
+        data = get_input(__file__, is_sample=True)
+        print(f"{f.__name__}:\n\t{f(data)}")
 
 EOT
   chmod +x ${PYTHON_FILE}

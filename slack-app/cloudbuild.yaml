@@ -1,0 +1,14 @@
+steps:
+  # Docker Build
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t',
+           'us-central1-docker.pkg.dev/${PROJECT_ID}/aoc-leaderboard/app',
+           '--build-arg', 'SLACK_BOT_TOKEN=$_SLACK_BOT_TOKEN',
+           '--build-arg', 'SLACK_SIGNING_SECRET=$_SLACK_SIGNING_SECRET',
+           '--build-arg', 'AOC_SESSION=$_AOC_SESSION',
+           '-f', 'slack-app/Dockerfile', 'slack-app/']
+
+  # Docker Push
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push',
+           'us-central1-docker.pkg.dev/${PROJECT_ID}/aoc-leaderboard/app']

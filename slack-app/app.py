@@ -10,8 +10,8 @@ import humanfriendly
 
 BY_TIME_PAT = re.compile("scoreboard by time\s*(\d+)?", flags=re.IGNORECASE)
 
-# CHANNEL_ID = "C01G7DC9BJM" # advent-of-cocde
-CHANNEL_ID = "C04D6FAKWDQ"  # app-testing
+CHANNEL_ID = "C01G7DC9BJM" # advent-of-cocde
+# CHANNEL_ID = "C04D6FAKWDQ"  # app-testing
 
 EMOJIS = {
     0: ":first_place_medal:",

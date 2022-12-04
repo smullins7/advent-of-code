@@ -12,3 +12,8 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push',
            'us-central1-docker.pkg.dev/${PROJECT_ID}/aoc-leaderboard/app']
+
+  # Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [ 'run', 'deploy', 'app', '--image', 'us-central1-docker.pkg.dev/$PROJECT_ID/aoc-leaderboard/app:latest',
+            '--region', 'us-central1', '--platform', 'managed' ]

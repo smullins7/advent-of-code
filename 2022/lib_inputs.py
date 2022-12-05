@@ -22,7 +22,7 @@ def day_filename(filename, is_sample):
 
 
 def get_input(filename, is_sample=True, coerce=str):
-    parsed = [coerce(x.strip()) for x in open(day_filename(filename, is_sample)).readlines()]
+    parsed = [coerce(x.rstrip()) for x in open(day_filename(filename, is_sample)).readlines()]
     # some puzzle inputs are only a single line and meant to be split on some delimiter
     return parsed if len(parsed) > 1 else parsed[0]
 

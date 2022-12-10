@@ -8,7 +8,7 @@ import requests
 import re
 import humanfriendly
 
-BY_TIME_PAT = re.compile("scoreboard by time\s*(\d+)?", flags=re.IGNORECASE)
+BY_TIME_PAT = re.compile(r"scoreboard by time\s*(\d+)?", flags=re.IGNORECASE)
 
 CHANNEL_ID = "C01G7DC9BJM" # advent-of-cocde
 # CHANNEL_ID = "C04D6FAKWDQ"  # app-testing

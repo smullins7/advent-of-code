@@ -1,49 +1,70 @@
-from __future__ import annotations
-
-import os
-import re
-from dataclasses import dataclass
-from typing import List, Set
-
-DAY_RE = re.compile(r"^.*/day_(\d+)\.py$")
-BASE_PATH = os.path.dirname(__file__)
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, TextIO, Set
 
 
-def c_to_b(c):
-    return format(int(c, 16), "0>4b")
+@dataclass
+class NDimPoint:
+    position: tuple
+    value: Any = None
+
+    def __hash__(self):
+        return hash(self.position)
+
+    def __str__(self):
+        return " ".join([str(p) for p in [self.position, self.value or ""]])
 
 
-def bin_to_int(b):
-    return int(b, 2)
+@dataclass
+class NDimGraph:
+    points: Dict[tuple, NDimPoint] = field(default_factory=dict)
+    value_index: Dict[Any, NDimPoint] = field(default_factory=dict)
+    current: NDimPoint = None
+
+    def add_point(self, *position, value=None):
+        self.points[position] = NDimPoint(position, value)
+        if value:
+            self.value_index[value] = self.points[position]
+        self.current = self.points[position]
+
+    def move(self, *position, value=None):
+        current = self.current.position
+        if len(position) != len(current):
+            raise ValueError(f"Must provide all dimensions when moving, {position} incompatible with {current}")
+        self.add_point(*tuple(map(sum, zip(current, position))), value=value)
+
+    def has(self, value):
+        return value in self.value_index
+
+    def get_by_value(self, value):
+        return self.value_index.get(value)
+
+    def pretty_print(self):
+        for point in self.points.values():
+            print(point)
 
 
-def day_filename(filename, is_sample):
-    return f"{BASE_PATH}/inputs/day-{DAY_RE.match(filename).group(1)}{'-sample' if is_sample else ''}.txt"
+@dataclass
+class TwoDGrid:
+    points: List[List[Any]] = field(default_factory=list)
 
+    def get_row(self, row_index):
+        return self.points[row_index]
 
-def get_input(filename, is_sample=True, coerce=str):
-    parsed = [coerce(x.rstrip()) for x in open(day_filename(filename, is_sample)).readlines()]
-    # some puzzle inputs are only a single line and meant to be split on some delimiter
-    return parsed if len(parsed) > 1 else parsed[0]
+    def get_column(self, column_index):
+        return [self.points[i][column_index] for i in range(len(self.points))]
 
+    def pretty_print(self):
+        for row in self.points:
+            print(" ".join(row))
 
-def input_to_binary(filename, puzzle=1):
-    return "".join([c_to_b(c) for c in open(day_filename(filename, puzzle)).readline().strip()])
-
-
-def to_grid(filename, puzzle=1, coerce=int) -> Grid:
-    grid = Grid([])
-    for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
-        grid.rows.append([Cell(x, y, coerce(c)) for x, c in enumerate(line.strip())])
-    return grid
-
-
-def to_sparse_grid(filename, puzzle=1):
-    grid = SparseGrid({})
-    for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
-        for x, c in enumerate(line.strip()):
-            grid.set(x, y, c)
-    return grid
+    @classmethod
+    def from_file(cls, open_file: TextIO):
+        line = open_file.readline()
+        grid = TwoDGrid()
+        while line:
+            grid.points.append([x.strip() for x in line.split(" ") if x.strip()])
+            line = open_file.readline()
+        return grid
 
 
 @dataclass(unsafe_hash=True)
@@ -143,7 +164,7 @@ class Grid:
 @dataclass
 class Node:
     value: str
-    neighbors: Set[Node]
+    neighbors: Set # of Node
 
     def add_path(self, node):
         self.neighbors.add(node)
@@ -156,24 +177,8 @@ class Node:
     def __hash__(self) -> int:
         return hash(self.value)
 
-    def __eq__(self, o: Node) -> bool:
+    def __eq__(self, o) -> bool:
         return self.value == o.value
 
     def __iter__(self):
         return iter(self.neighbors)
-
-
-def to_nodes(filename, puzzle=1) -> Node:
-    nodes = {}
-
-    def _get(value) -> Node:
-        if value not in nodes:
-            nodes[value] = Node.from_value(value)
-        return nodes[value]
-
-    for line in open(day_filename(filename, puzzle)).readlines():
-        left, right = line.strip().split("-")
-        left_node = _get(left)
-        right_node = _get(right)
-        left_node.add_path(right_node)
-    return nodes["start"]

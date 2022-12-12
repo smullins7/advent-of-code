@@ -46,9 +46,9 @@ def input_to_binary(filename, puzzle=1):
     return "".join([c_to_b(c) for c in open(day_filename(filename, puzzle)).readline().strip()])
 
 
-def to_grid(filename, puzzle=1, coerce=int) -> Grid:
+def to_grid(filename, is_sample=True, coerce=int) -> Grid:
     grid = Grid([])
-    for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
+    for y, line in enumerate(open(day_filename(filename, is_sample)).readlines()):
         grid.rows.append([Cell(x, y, coerce(c)) for x, c in enumerate(line.strip())])
     return grid
 

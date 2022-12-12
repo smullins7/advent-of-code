@@ -109,7 +109,7 @@ class SparseGrid:
 class Cell:
     x: int
     y: int
-    value: int
+    value: Any
 
     def __str__(self):
         return f"({self.x}, {self.y}, {self.value})"
@@ -164,7 +164,7 @@ class Grid:
 @dataclass
 class Node:
     value: str
-    neighbors: Set # of Node
+    neighbors: Set  # of Node
 
     def add_path(self, node):
         self.neighbors.add(node)

@@ -24,7 +24,7 @@ if test -f "${PYTHON_FILE}"; then
   echo "${PYTHON_FILE} exists, not writing stub python file"
 else
   cat <<EOT >> ${PYTHON_FILE}
-from lib_inputs import get_input
+from utils.inputs import get_input
 
 
 def part_one(data):

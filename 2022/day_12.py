@@ -1,6 +1,6 @@
 import string
 
-from utils.algos import shortest_path
+from utils.algos import shortest_path, a_star
 from utils.graphs import Cell, Grid
 from utils.inputs import to_grid
 
@@ -24,7 +24,7 @@ def part_two(grid: Grid):
 def alpha(c: str):
     if c.islower():
         return string.ascii_lowercase.index(c) + 1
-    elif c == "A":
+    elif c == "S":
         return 1
     else:
         return 27

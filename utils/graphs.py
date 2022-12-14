@@ -111,6 +111,15 @@ class Cell:
     y: int
     value: Any
 
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.value == other.value
+
     def __str__(self):
         return f"({self.x}, {self.y}, {self.value})"
 
@@ -156,6 +165,13 @@ class Grid:
 
     def find_all_adjacency(self, x, y) -> List[Cell]:
         return self.find_adjacency(x, y) + self.find_diagonal_adjacency(x, y)
+
+    def as_adjacency_list(self) -> Dict[Cell, List[Cell]]:
+        adjacency = {}
+        for row in self:
+            for cell in row:
+                adjacency[cell] = self.find_neighbors(cell)
+        return adjacency
 
     def __iter__(self):
         return iter(self.rows)

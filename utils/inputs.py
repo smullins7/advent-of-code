@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from utils.binary import c_to_b
-from utils.graphs import SparseGrid, Grid, Node, Cell
+from utils.graphs import SparseGrid, Grid, Node, Cell, SparseValueGrid
 
 DAY_RE = re.compile(r"^.*/day_(\d+)\.py$")
 BASE_PATH = Path(os.path.dirname(__file__)).parent
@@ -54,7 +54,7 @@ def to_grid(filename, is_sample=True, coerce=int) -> Grid:
 
 
 def to_sparse_grid(filename, puzzle=1):
-    grid = SparseGrid({})
+    grid = SparseValueGrid({})
     for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
         for x, c in enumerate(line.strip()):
             grid.set(x, y, c)

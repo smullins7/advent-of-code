@@ -68,7 +68,7 @@ class TwoDGrid:
 
 
 @dataclass(unsafe_hash=True)
-class SparseGrid:
+class SparseValueGrid:
     values: dict
     max_x: int = 0
     max_y: int = 0
@@ -103,6 +103,28 @@ class SparseGrid:
         else:
             self.cursor_x += 1
         return x, y, result
+
+
+@dataclass(unsafe_hash=True)
+class SparseGrid:
+    values: set = field(default_factory=lambda: set())
+    max_x: int = None
+    max_y: int = None
+    min_x: int = None
+    min_y: int = None
+
+    def set(self, x, y):
+        self.values.add((x, y))
+        self.max_x = max(self.max_x, x) if self.max_x is not None else x
+        self.min_x = min(self.min_x, x) if self.min_x is not None else x
+        self.max_y = max(self.max_y, y) if self.max_y is not None else y
+        self.min_y = min(self.min_y, y) if self.min_y is not None else y
+
+    def has(self, x, y):
+        return (x, y) in self.values
+
+    def __iter__(self):
+        return iter(self.values)
 
 
 @dataclass(unsafe_hash=True)

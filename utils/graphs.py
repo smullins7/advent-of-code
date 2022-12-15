@@ -70,15 +70,19 @@ class TwoDGrid:
 @dataclass(unsafe_hash=True)
 class SparseValueGrid:
     values: dict
-    max_x: int = 0
-    max_y: int = 0
+    max_x: int = None
+    min_x: int = None
+    max_y: int = None
+    min_y: int = None
     cursor_x: int = 0
     cursor_y: int = 0
 
     def set(self, x, y, val):
         self.values[(x, y)] = val
-        self.max_x = max(self.max_x, x)
-        self.max_y = max(self.max_y, y)
+        self.max_x = max(self.max_x, x) if self.max_x is not None else x
+        self.min_x = min(self.min_x, x) if self.min_x is not None else x
+        self.max_y = max(self.max_y, y) if self.max_y is not None else y
+        self.min_y = min(self.min_y, y) if self.min_y is not None else y
 
     def get(self, x, y, default=None):
         return self.values.get((x, y), default)

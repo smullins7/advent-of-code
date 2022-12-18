@@ -4,14 +4,15 @@ from datetime import datetime
 from pathlib import Path
 
 from utils.binary import c_to_b
-from utils.graphs import SparseGrid, Grid, Node, Cell, SparseValueGrid
+from utils.graphs import Grid, Node, Cell, SparseValueGrid
 
-DAY_RE = re.compile(r"^.*/day_(\d+)\.py$")
+DAY_RE = re.compile(r"^.*day_(\d+)\.py$")
 BASE_PATH = Path(os.path.dirname(__file__)).parent
 
 
 def day_filename(filename, is_sample):
-    return f"{BASE_PATH}/{datetime.today().year}/inputs/day-{DAY_RE.match(filename).group(1)}{'-sample' if is_sample else ''}.txt"
+    return os.path.join(BASE_PATH, str(datetime.today().year), "inputs",
+                        f"day-{DAY_RE.match(filename).group(1)}{'-sample' if is_sample else ''}.txt")
 
 
 def get_input(filename, is_sample=True, coerce=str):

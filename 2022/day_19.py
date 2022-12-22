@@ -2,7 +2,6 @@ import math
 import re
 from collections import defaultdict
 from dataclasses import dataclass
-from itertools import combinations_with_replacement, permutations, product
 from typing import List
 
 from utils.inputs import get_input
@@ -15,27 +14,6 @@ def parse(line):
     return Blueprint(
         **{k: int(v) for k, v in PARSE_PAT.match(line).groupdict().items()}
     )
-
-
-def part_one_abandoned(data):
-    quality_levels = 0
-    for blueprint in data:
-        levels = {}
-        for build_order in product(["o", "c", "b"], repeat=14):
-            if "c" not in build_order or "b" not in build_order:
-                continue  # there's no way to crack geodes with obsidian which requires clay
-            factory = Factory(blueprint)
-            factory.operate_with_build_order(list(build_order))
-            level = factory.determine_quality_level()
-            levels[build_order] = level
-        max_level = max(levels.values())
-        print("Adding quality:", max_level)
-        quality_levels += max_level
-    return quality_levels
-
-
-def prioritize(n):
-    return list(combinations_with_replacement(["obsidian", "clay", "ore"], n))
 
 
 @dataclass
@@ -55,7 +33,7 @@ class Blueprint:
         return self.geode_obsidian
 
     def get_max_ore_robots(self):
-        return self.obsidian_ore + self.geode_ore
+        return max(self.obsidian_ore, self.geode_ore)
 
 
 @dataclass
@@ -138,7 +116,7 @@ class Factory:
         if robot == "geode":
             return self.ore >= self.blueprint.geode_ore and self.obsidian >= self.blueprint.geode_obsidian
         elif robot == "obsidian":
-            return self.ore >= self.blueprint.obsidian_ore and self.clay >= self.blueprint.obsidian_clay and self.obsidian_robots < self.blueprint.get_max_obsidian_robots()
+            return self.ore >= self.blueprint.obsidian_ore and self.clay >= self.blueprint.obsidian_clay  # and self.obsidian_robots < self.blueprint.get_max_obsidian_robots()
         elif robot == "clay":
             return self.ore >= self.blueprint.clay_ore and self.clay_robots < self.blueprint.get_max_clay_robots()
         else:  # ore
@@ -343,7 +321,7 @@ def part_one(blueprints: List[Blueprint]):
                 quality_level = factory.determine_quality_level()
                 blueprint_best_quality_level = max(blueprint_best_quality_level, quality_level)
                 options_checked += 1
-                #if options_checked % 1000000 == 0:
+                # if options_checked % 1000000 == 0:
                 #    print("Checked", options_checked, "max so far is", blueprint_best_quality_level)
             else:
                 best_num_of_geode = geode_by_time[factory.minutes]
@@ -351,7 +329,8 @@ def part_one(blueprints: List[Blueprint]):
                     geode_by_time[factory.minutes] = best_num_of_geode
                     factories.extend(factory.take_turn())
                 # otherwise, we'll never catch up to this best so might as well abandon
-        print(blueprint.id, "quality level", blueprint_best_quality_level, "score", blueprint_best_quality_level / blueprint.id)
+        print(blueprint.id, "quality level", blueprint_best_quality_level, "score",
+              blueprint_best_quality_level / blueprint.id)
         quality_levels.append(blueprint_best_quality_level)
 
     return sum(quality_levels)
@@ -365,7 +344,7 @@ def part_two(blueprints: List[Blueprint]):
         blueprint_best_geodes = 0
         geode_by_time = defaultdict(int)
         while factories:
-            factory = factories.pop()
+            factory = factories.pop(0)
             if not factory.minutes:
                 blueprint_best_geodes = max(blueprint_best_geodes, factory.geodes_opened)
             else:
@@ -380,8 +359,95 @@ def part_two(blueprints: List[Blueprint]):
     return math.prod(scores)
 
 
+def can_build(thing, robot):
+    # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+    if robot == "geode":
+        return thing[6] >= thing[0].geode_ore and thing[8] >= thing[0].geode_obsidian
+    elif robot == "obsidian":
+        return thing[6] >= thing[0].obsidian_ore and thing[7] >= thing[0].obsidian_clay
+    elif robot == "clay":
+        return thing[6] >= thing[0].clay_ore and thing[3] < thing[0].get_max_clay_robots()
+    else:  # ore
+        return thing[6] >= thing[0].ore and thing[2] < thing[0].get_max_ore_robots()
+
+
+def determine_builds(thing):
+    # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+    if thing[1] == 1:
+        return []
+    # building a geode robot always takes priority, consider no other action
+    if can_build(thing, "geode"):
+        return ["geode"]
+    # if this is the last useful turn to build, and I can't build a geode then don't bother building anything
+    if thing[1] == 2 and (
+            thing[6] + thing[2] < thing[0].geode_ore or thing[8] + thing[4] < thing[0].geode_obsidian):
+        return []
+    # if this is the last useful turn to an obsidian, and building one won't let me build a geode next turn then don't bother building anything
+    if thing[1] == 3 and (self.obsidian + thing[4] + 1 < thing[0].geode_obsidian):
+        return []
+    # prioritize obsidian over clay and ore since it's critical for geode
+    if can_build("obsidian"):
+        return ["obsidian"]
+
+    return [r for r in ("clay", "ore") if can_build(r)]
+
+
+def gather_resources(thing):
+    # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+    return (thing[0], thing[1] - 1, thing[2], thing[3], thing[4], thing[5], thing[6] + thing[2],
+            thing[7] + thing[3], thing[8] + thing[4], thing[9] + thing[5])
+
+
+POS = {
+    "ore": 2,
+    "clay": 3,
+    "obsidian": 4,
+    "geode": 5
+}
+
+
+def build(thing, robot):
+    # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+    return (thing[0], thing[1], thing[2] + (1 if robot == "ore" else 0), thing[3] + (1 if robot == "clay" else 0),
+            thing[4] + (1 if robot == "obsidian" else 0), thing[5] + (1 if robot == "geode" else 0),
+            thing[6], thing[7], thing[8], thing[9])
+
+
+def do(thing):
+    # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+
+    new_things = []
+    to_build = determine_builds(thing)
+    for robot_to_build in to_build:
+        new_thing = gather_resources(thing)
+        new_things.append(build(new_thing, robot_to_build))
+
+    if "geode" not in to_build and "obsidian" not in to_build:
+        # we did not build a geode or obsidian robot, so an option is to just gather this turn
+        new_things.append(gather_resources(thing))
+
+    return new_things
+
+
+def geodes_for_bp(blueprint: Blueprint):
+    thing = (blueprint, 32, 1, 0, 0, 0, 0, 0, 0, 0)  # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+    q = [thing]
+    cache_by_time = defaultdict(int)
+    best = 0
+    while q:
+        current = q.pop(0)
+        if not current[1]:
+            best = max(best, current[-1])
+        else:
+            best = cache_by_time[current[1]]
+            if current[-1] >= best:
+                cache_by_time[current[1]] = best
+                q.extend(do(current))
+    return best
+
+
 # 810 is too low, 1016?, 1057, 1093 is too low
 if __name__ == "__main__":
-    for f in (part_two, ):
+    for f in (part_two,):
         data = get_input(__file__, is_sample=1, coerce=parse)
         print(f"{f.__name__}:\n\t{f(data)}")

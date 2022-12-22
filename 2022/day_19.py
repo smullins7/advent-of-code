@@ -311,24 +311,8 @@ def part_one(blueprints: List[Blueprint]):
     quality_levels = []
     for blueprint in blueprints:
         print("Checking blueprint", blueprint.id)
-        factories = [Factory(blueprint)]
-        blueprint_best_quality_level = 0
-        options_checked = 0
-        geode_by_time = defaultdict(int)
-        while factories:
-            factory = factories.pop()
-            if not factory.minutes:
-                quality_level = factory.determine_quality_level()
-                blueprint_best_quality_level = max(blueprint_best_quality_level, quality_level)
-                options_checked += 1
-                # if options_checked % 1000000 == 0:
-                #    print("Checked", options_checked, "max so far is", blueprint_best_quality_level)
-            else:
-                best_num_of_geode = geode_by_time[factory.minutes]
-                if factory.geodes_opened >= best_num_of_geode:
-                    geode_by_time[factory.minutes] = best_num_of_geode
-                    factories.extend(factory.take_turn())
-                # otherwise, we'll never catch up to this best so might as well abandon
+
+        blueprint_best_quality_level = geodes_for_bp(blueprint, 24) * blueprint.id
         print(blueprint.id, "quality level", blueprint_best_quality_level, "score",
               blueprint_best_quality_level / blueprint.id)
         quality_levels.append(blueprint_best_quality_level)
@@ -340,21 +324,9 @@ def part_two(blueprints: List[Blueprint]):
     scores = []
     for blueprint in blueprints[:3]:
         print("Checking blueprint", blueprint.id)
-        factories = [Factory(blueprint, minutes=32)]
-        blueprint_best_geodes = 0
-        geode_by_time = defaultdict(int)
-        while factories:
-            factory = factories.pop(0)
-            if not factory.minutes:
-                blueprint_best_geodes = max(blueprint_best_geodes, factory.geodes_opened)
-            else:
-                best_num_of_geode = geode_by_time[factory.minutes]
-                if factory.geodes_opened >= best_num_of_geode:
-                    geode_by_time[factory.minutes] = best_num_of_geode
-                    factories.extend(factory.take_turn())
-                # otherwise, we'll never catch up to this best so might as well abandon
-        print(blueprint.id, "score", blueprint_best_geodes)
-        scores.append(blueprint_best_geodes)
+        geodes = geodes_for_bp(blueprint, 32)
+        print(blueprint.id, "score", geodes)
+        scores.append(geodes)
 
     return math.prod(scores)
 
@@ -383,13 +355,13 @@ def determine_builds(thing):
             thing[6] + thing[2] < thing[0].geode_ore or thing[8] + thing[4] < thing[0].geode_obsidian):
         return []
     # if this is the last useful turn to an obsidian, and building one won't let me build a geode next turn then don't bother building anything
-    if thing[1] == 3 and (self.obsidian + thing[4] + 1 < thing[0].geode_obsidian):
+    if thing[1] == 3 and (thing[8] + thing[4] + 1 < thing[0].geode_obsidian):
         return []
     # prioritize obsidian over clay and ore since it's critical for geode
-    if can_build("obsidian"):
+    if can_build(thing, "obsidian"):
         return ["obsidian"]
 
-    return [r for r in ("clay", "ore") if can_build(r)]
+    return [r for r in ("clay", "ore") if can_build(thing, r)]
 
 
 def gather_resources(thing):
@@ -398,29 +370,39 @@ def gather_resources(thing):
             thing[7] + thing[3], thing[8] + thing[4], thing[9] + thing[5])
 
 
-POS = {
-    "ore": 2,
-    "clay": 3,
-    "obsidian": 4,
-    "geode": 5
-}
-
-
 def build(thing, robot):
     # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
-    return (thing[0], thing[1], thing[2] + (1 if robot == "ore" else 0), thing[3] + (1 if robot == "clay" else 0),
-            thing[4] + (1 if robot == "obsidian" else 0), thing[5] + (1 if robot == "geode" else 0),
-            thing[6], thing[7], thing[8], thing[9])
+    new_ore, new_clay, new_obs, new_geode = 0, 0, 0, 0
+    less_ore, less_clay, less_obs = 0, 0, 0
+    if robot == "geode":
+        new_geode = 1
+        less_ore = thing[0].geode_ore
+        less_obs = thing[0].geode_obsidian
+    elif robot == "obsidian":
+        new_obs = 1
+        less_ore = thing[0].obsidian_ore
+        less_clay = thing[0].obsidian_clay
+    elif robot == "clay":
+        new_clay = 1
+        less_ore = thing[0].clay_ore
+    else:  # ore
+        new_ore = 1
+        less_ore = thing[0].ore
+
+    return (thing[0], thing[1], thing[2] + new_ore, thing[3] + new_clay,
+            thing[4] + new_obs, thing[5] + new_geode,
+            thing[6] - less_ore, thing[7] - less_clay, thing[8] - less_obs, thing[9])
 
 
 def do(thing):
     # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
-
     new_things = []
     to_build = determine_builds(thing)
     for robot_to_build in to_build:
-        new_thing = gather_resources(thing)
-        new_things.append(build(new_thing, robot_to_build))
+        new_thing = build(thing, robot_to_build)
+        if new_thing[6] < 0 or new_thing[7] < 0 or new_thing[8] < 0:
+            print("negative resources is bug", thing, robot_to_build, new_thing)
+        new_things.append(gather_resources(new_thing))
 
     if "geode" not in to_build and "obsidian" not in to_build:
         # we did not build a geode or obsidian robot, so an option is to just gather this turn
@@ -429,25 +411,26 @@ def do(thing):
     return new_things
 
 
-def geodes_for_bp(blueprint: Blueprint):
-    thing = (blueprint, 32, 1, 0, 0, 0, 0, 0, 0, 0)  # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
+def geodes_for_bp(blueprint: Blueprint, minutes):
+    thing = (blueprint, minutes, 1, 0, 0, 0, 0, 0, 0, 0)  # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
     q = [thing]
-    cache_by_time = defaultdict(int)
+    #cache_by_time = defaultdict(int)
     best = 0
     while q:
-        current = q.pop(0)
+        current = q.pop()
         if not current[1]:
             best = max(best, current[-1])
         else:
-            best = cache_by_time[current[1]]
-            if current[-1] >= best:
-                cache_by_time[current[1]] = best
-                q.extend(do(current))
+            #best = cache_by_time[current[1]]
+            #if current[-1] >= best:
+                #cache_by_time[current[1]] = best
+                for _next in do(current):
+                    q.insert(0, _next)
     return best
 
 
 # 810 is too low, 1016?, 1057, 1093 is too low
 if __name__ == "__main__":
-    for f in (part_two,):
+    for f in (part_one, part_two,):
         data = get_input(__file__, is_sample=1, coerce=parse)
         print(f"{f.__name__}:\n\t{f(data)}")

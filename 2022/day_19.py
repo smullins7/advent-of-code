@@ -1,11 +1,14 @@
+import math
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from itertools import combinations_with_replacement, permutations, product
 from typing import List
 
 from utils.inputs import get_input
 
-PARSE_PAT = re.compile(r"Blueprint (?P<id>\d+): Each ore robot costs (?P<ore>\d+) ore. Each clay robot costs (?P<clay_ore>\d+) ore. Each obsidian robot costs (?P<obsidian_ore>\d+) ore and (?P<obsidian_clay>\d+) clay. Each geode robot costs (?P<geode_ore>\d+) ore and (?P<geode_obsidian>\d+) obsidian.")
+PARSE_PAT = re.compile(
+    r"Blueprint (?P<id>\d+): Each ore robot costs (?P<ore>\d+) ore. Each clay robot costs (?P<clay_ore>\d+) ore. Each obsidian robot costs (?P<obsidian_ore>\d+) ore and (?P<obsidian_clay>\d+) clay. Each geode robot costs (?P<geode_ore>\d+) ore and (?P<geode_obsidian>\d+) obsidian.")
 
 
 def parse(line):
@@ -14,7 +17,7 @@ def parse(line):
     )
 
 
-def part_one(data):
+def part_one_abandoned(data):
     quality_levels = 0
     for blueprint in data:
         levels = {}
@@ -34,9 +37,6 @@ def part_one(data):
 def prioritize(n):
     return list(combinations_with_replacement(["obsidian", "clay", "ore"], n))
 
-def part_two(data):
-    return 0
-
 
 @dataclass
 class Blueprint:
@@ -47,10 +47,15 @@ class Blueprint:
     obsidian_clay: int
     geode_ore: int
     geode_obsidian: int
-    max_clay: int = 0
 
-    def __post_init__(self):
-        self.max_clay = self.obsidian_clay // self.ore
+    def get_max_clay_robots(self):
+        return self.obsidian_clay
+
+    def get_max_obsidian_robots(self):
+        return self.geode_obsidian
+
+    def get_max_ore_robots(self):
+        return self.obsidian_ore + self.geode_ore
 
 
 @dataclass
@@ -66,11 +71,84 @@ class Factory:
     geode_robots: int = 0
     geodes_opened: int = 0
 
+    def take_turn(self):
+        new_factories = []
+        bots_to_build = self.determine_possible_builds()
+        for robot_to_build in bots_to_build:
+            factory = Factory.copy_from(self)
+            factory.gather_materials()
+            factory.build_robot(robot_to_build)
+            new_factories.append(factory)
+
+        if "geode" not in bots_to_build and "obsidian" not in bots_to_build:
+            # we did not build a geode or obsidian robot, so an option is to just gather this turn
+            new_factories.append(self)
+            self.gather_materials()
+
+        return new_factories
+
+    def determine_possible_builds(self) -> List[str]:
+        # last turn, no point in building anything, just gather
+        if self.minutes == 1:
+            return []
+        # building a geode robot always takes priority, consider no other action
+        if self.can_build("geode"):
+            return ["geode"]
+        # if this is the last useful turn to build, and I can't build a geode then don't bother building anything
+        if self.minutes == 2 and (
+                self.ore + self.ore_robots < self.blueprint.geode_ore or self.obsidian + self.obsidian_robots < self.blueprint.geode_obsidian):
+            return []
+        # if this is the last useful turn to an obsidian, and building one won't let me build a geode next turn then don't bother building anything
+        if self.minutes == 3 and (self.obsidian + self.obsidian_robots + 1 < self.blueprint.geode_obsidian):
+            return []
+        # prioritize obsidian over clay and ore since it's critical for geode
+        if self.can_build("obsidian"):
+            return ["obsidian"]
+
+        return [r for r in ("clay", "ore") if self.can_build(r)]
+
+    def gather_materials(self):
+        self.ore += self.ore_robots
+        self.clay += self.clay_robots
+        self.obsidian += self.obsidian_robots
+        self.geodes_opened += self.geode_robots
+
+        self.minutes -= 1
+
+    def build_robot(self, robot: str):
+        if robot == "geode":
+            self.ore -= self.blueprint.geode_ore
+            self.obsidian -= self.blueprint.geode_obsidian
+            self.geode_robots += 1
+        elif robot == "obsidian":
+            self.ore -= self.blueprint.obsidian_ore
+            self.clay -= self.blueprint.obsidian_clay
+            self.obsidian_robots += 1
+        elif robot == "clay":
+            self.ore -= self.blueprint.clay_ore
+            self.clay_robots += 1
+        else:  # ore
+            self.ore -= self.blueprint.ore
+            self.ore_robots += 1
+
+        if self.ore < 0 or self.clay < 0 or self.obsidian < 0:
+            print("bug here", self)
+
+    def can_build(self, robot: str):
+        if robot == "geode":
+            return self.ore >= self.blueprint.geode_ore and self.obsidian >= self.blueprint.geode_obsidian
+        elif robot == "obsidian":
+            return self.ore >= self.blueprint.obsidian_ore and self.clay >= self.blueprint.obsidian_clay and self.obsidian_robots < self.blueprint.get_max_obsidian_robots()
+        elif robot == "clay":
+            return self.ore >= self.blueprint.clay_ore and self.clay_robots < self.blueprint.get_max_clay_robots()
+        else:  # ore
+            return self.ore >= self.blueprint.ore and self.ore_robots < self.blueprint.get_max_ore_robots()
+
     def operate_with_build_order(self, build_order):
         build_next = None
         while self.minutes:
             if not build_next:
-                build_next = build_order.pop(0) if build_order else "b" # default to obsidian because why not
+                build_next = build_order.pop(0) if build_order else "b"  # default to obsidian because why not
             new_geode_robots, new_obsidian_robots, new_clay_robots, new_ore_robots = 0, 0, 0, 0
             if self.ore >= self.blueprint.geode_ore and self.obsidian >= self.blueprint.geode_obsidian:
                 # make geode robot
@@ -112,7 +190,7 @@ class Factory:
             self.ore_robots += new_ore_robots
             self.minutes -= 1
 
-            #print(self)
+            # print(self)
 
     def operate_with_limits(self, max_clay_no_obsidian, max_clay):
         while self.minutes:
@@ -153,7 +231,7 @@ class Factory:
             self.ore_robots += new_ore_robots
             self.minutes -= 1
 
-            #print(self)
+            # print(self)
 
     def operate(self):
         while self.minutes:
@@ -228,7 +306,22 @@ class Factory:
 
         # if there are obsidian robots and we have the materials, only build if we couldn't build an obsidian robot
         # next turn because reasons
-        #return self.ore + self.ore_robots < self.blueprint.obsidian_ore or self.clay + self.clay_robots < self.blueprint.obsidian_clay
+        # return self.ore + self.ore_robots < self.blueprint.obsidian_ore or self.clay + self.clay_robots < self.blueprint.obsidian_clay
+
+    @staticmethod
+    def copy_from(other):
+        return Factory(
+            other.blueprint,
+            other.minutes,
+            other.ore,
+            other.ore_robots,
+            other.clay,
+            other.clay_robots,
+            other.obsidian,
+            other.obsidian_robots,
+            other.geode_robots,
+            other.geodes_opened,
+        )
 
     def __str__(self):
         return f"Factory(blueprint: {self.blueprint.id}), minute: {24 - self.minutes}\n  robots:\n - ore: {self.ore_robots}\n" \
@@ -236,9 +329,59 @@ class Factory:
                f"  materials:\n - ore: {self.ore}\n - clay: {self.clay}\n - obsidian: {self.obsidian}\n - geode: {self.geodes_opened}\n"
 
 
+def part_one(blueprints: List[Blueprint]):
+    quality_levels = []
+    for blueprint in blueprints:
+        print("Checking blueprint", blueprint.id)
+        factories = [Factory(blueprint)]
+        blueprint_best_quality_level = 0
+        options_checked = 0
+        geode_by_time = defaultdict(int)
+        while factories:
+            factory = factories.pop()
+            if not factory.minutes:
+                quality_level = factory.determine_quality_level()
+                blueprint_best_quality_level = max(blueprint_best_quality_level, quality_level)
+                options_checked += 1
+                #if options_checked % 1000000 == 0:
+                #    print("Checked", options_checked, "max so far is", blueprint_best_quality_level)
+            else:
+                best_num_of_geode = geode_by_time[factory.minutes]
+                if factory.geodes_opened >= best_num_of_geode:
+                    geode_by_time[factory.minutes] = best_num_of_geode
+                    factories.extend(factory.take_turn())
+                # otherwise, we'll never catch up to this best so might as well abandon
+        print(blueprint.id, "quality level", blueprint_best_quality_level, "score", blueprint_best_quality_level / blueprint.id)
+        quality_levels.append(blueprint_best_quality_level)
+
+    return sum(quality_levels)
+
+
+def part_two(blueprints: List[Blueprint]):
+    scores = []
+    for blueprint in blueprints[:3]:
+        print("Checking blueprint", blueprint.id)
+        factories = [Factory(blueprint, minutes=32)]
+        blueprint_best_geodes = 0
+        geode_by_time = defaultdict(int)
+        while factories:
+            factory = factories.pop()
+            if not factory.minutes:
+                blueprint_best_geodes = max(blueprint_best_geodes, factory.geodes_opened)
+            else:
+                best_num_of_geode = geode_by_time[factory.minutes]
+                if factory.geodes_opened >= best_num_of_geode:
+                    geode_by_time[factory.minutes] = best_num_of_geode
+                    factories.extend(factory.take_turn())
+                # otherwise, we'll never catch up to this best so might as well abandon
+        print(blueprint.id, "score", blueprint_best_geodes)
+        scores.append(blueprint_best_geodes)
+
+    return math.prod(scores)
+
+
 # 810 is too low, 1016?, 1057, 1093 is too low
 if __name__ == "__main__":
-    for f in (part_one, part_two):
-        data = get_input(__file__, is_sample=0, coerce=parse)
+    for f in (part_two, ):
+        data = get_input(__file__, is_sample=1, coerce=parse)
         print(f"{f.__name__}:\n\t{f(data)}")
-

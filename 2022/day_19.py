@@ -414,18 +414,18 @@ def do(thing):
 def geodes_for_bp(blueprint: Blueprint, minutes):
     thing = (blueprint, minutes, 1, 0, 0, 0, 0, 0, 0, 0)  # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
     q = [thing]
-    #cache_by_time = defaultdict(int)
+    cache_by_time = defaultdict(int)
     best = 0
     while q:
-        current = q.pop()
+        current = q.pop(0)
         if not current[1]:
             best = max(best, current[-1])
         else:
-            #best = cache_by_time[current[1]]
-            #if current[-1] >= best:
-                #cache_by_time[current[1]] = best
+            best = cache_by_time[current[1]]
+            if current[-1] >= best:
+                cache_by_time[current[1]] = best
                 for _next in do(current):
-                    q.insert(0, _next)
+                    q.append(_next)
     return best
 
 

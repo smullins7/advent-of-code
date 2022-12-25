@@ -33,7 +33,7 @@ class Blueprint:
         return self.geode_obsidian
 
     def get_max_ore_robots(self):
-        return max(self.obsidian_ore, self.geode_ore)
+        return max(self.obsidian_ore, self.geode_ore, self.clay_ore)
 
 
 @dataclass
@@ -342,16 +342,16 @@ def can_build(bp: Blueprint, robots: Tuple, mats: Tuple, robot):
         return mats[0] >= bp.ore and robots[0] < bp.get_max_ore_robots()
 
 
-def determine_builds(bp: Blueprint, minutes: int, robots: Tuple, mats: Tuple):
-    if minutes == 1:
-        return []
+def determine_builds(bp: Blueprint, robots: Tuple, mats: Tuple):
+    #if minutes == 1:
+    #    return []
     # building a geode robot always takes priority, consider no other action
     if can_build(bp, robots, mats, "geode"):
         return ["geode"]
     # if this is the last useful turn to build, and I can't build a geode then don't bother building anything
-    if minutes == 2 and (
-            robots[0] + mats[0] < bp.geode_ore or robots[2] + mats[2] < bp.geode_obsidian):
-        return []
+    #if minutes == 2 and (
+    #        robots[0] + mats[0] < bp.geode_ore or robots[2] + mats[2] < bp.geode_obsidian):
+    #    return []
     # if this is the last useful turn to an obsidian, and building one won't let me build a geode next turn then don't bother building anything
     #if minutes == 3 and (robots[2] + mats[2] + 1 < bp.geode_obsidian):
     #    return []
@@ -359,14 +359,14 @@ def determine_builds(bp: Blueprint, minutes: int, robots: Tuple, mats: Tuple):
     #if can_build(bp, robots, mats, "obsidian"):
     #    return ["obsidian"]
 
-    return [r for r in ("clay", "ore", "obsidian") if can_build(bp, robots, mats, r)]
+    return [r for r in ("clay", "ore", "obsidian") if can_build(bp, robots, mats, r)] + [""]
 
 
 def gather_resources(robots, mats):
     return tuple([l + r for l, r in zip(robots, mats)])
 
 
-def build(bp: Blueprint, robots: Tuple, mats: Tuple, robot) -> Tuple:
+def build(bp: Blueprint, robots: Tuple, mats: Tuple, robot: str) -> Tuple:
     # bp, min, ore r, clay r, ob r,  geode r, ore, clay, obs, geode)
     new_ore, new_clay, new_obs, new_geode = 0, 0, 0, 0
     less_ore, less_clay, less_obs = 0, 0, 0
@@ -391,55 +391,57 @@ def build(bp: Blueprint, robots: Tuple, mats: Tuple, robot) -> Tuple:
     )
 
 
-def do(bp: Blueprint, minutes: int, robots: Tuple, mats: Tuple) -> List:
+def turn_options(bp: Blueprint, robots: Tuple, mats: Tuple) -> List:
     new_things = []
-    to_build = determine_builds(bp, minutes, robots, mats)
+    to_build = determine_builds(bp, robots, mats)
     for robot_to_build in to_build:
         updated_robots, updated_mats = build(bp, robots, mats, robot_to_build)
         if any(map(lambda n: n < 0, updated_mats)):
             raise ValueError(f"negative resources is bug: {updated_robots}, {updated_mats}, {robot_to_build}")
-        new_things.append((minutes - 1, updated_robots, gather_resources(robots, updated_mats)))
+        new_things.append((updated_robots, gather_resources(robots, updated_mats)))
 
     if "geode" not in to_build:# and "obsidian" not in to_build:
         # we did not build a geode or obsidian robot, so an option is to just gather this turn
-        new_things.append((minutes - 1, robots, gather_resources(robots, mats)))
+        new_things.append((robots, gather_resources(robots, mats)))
 
     return new_things
 
 
-def geodes_for_bp(blueprint: Blueprint, minutes):
-    q = [
-        # queue for the current minute
-        [
-            # min, robots, mats
-            (minutes, (1, 0, 0, 0), (0, 0, 0, 0))
-        ]
-    ]
+def geodes_for_bp(bp: Blueprint, end_time):
+    stack = [(0, (1, 0, 0, 0), (0, 0, 0, 0), set())]
+    best_at_time = defaultdict(int)
+    maxes = {
+        "ore": bp.get_max_ore_robots(),
+        "clay": bp.get_max_clay_robots(),
+        "obsidian": bp.get_max_obsidian_robots(),
+        "geode": end_time
+    }
+    robot_index = {
+        "ore": 0,
+        "clay": 1,
+        "obsidian": 2,
+        "geode": 3
+    }
+    while stack:
+        t, robots, mats, skip = stack.pop(0)
+        best_at_time[t] = max(best_at_time[t], mats[3])
+        if t <= end_time and best_at_time[t] == mats[3]:
+            builds = determine_builds(bp, robots, mats)
+            for to_build in builds:
+                if not to_build:
+                    stack.append((t + 1, robots, gather_resources(robots, mats), builds))
+                elif to_build in skip:
+                    continue
+                elif robots[robot_index[to_build]] == maxes[to_build]:
+                    continue
+                else:
+                    more_bots, less_mats = build(bp, robots, mats, to_build)
+                    stack.insert(0, (t + 1, more_bots, gather_resources(robots, less_mats), set()))
+    return best_at_time[end_time]
 
-    best = 0
-    while q:
-        current_minute_to_check = q.pop(0)
-        next_minute = []
 
-        for minutes, robots, mats in current_minute_to_check:
-            geodes = mats[-1]
-            if not minutes:
-                best = max(best, geodes)
-            else:
-                for _next in do(blueprint, minutes, robots, mats):
-                    next_minute.append(_next)
-
-        if next_minute:
-            # only consider the paths where we've opened the most geodes so far, as all other paths
-            # will never catch up
-            best_this_minute = max(_next[2][3] for _next in next_minute)
-            q.append([_next for _next in next_minute if _next[2][3] - 1 <= best_this_minute])
-
-    return best
-
-
-# 810 is too low, 1016?, 1057, 1093 is too low
+# 810 is too low, 1016?, 1057, 1093 is too low, 3472 is too high
 if __name__ == "__main__":
-    for f in (part_two,):
-        data = get_input(__file__, is_sample=1, coerce=parse)
+    for f in (part_one, part_two):
+        data = get_input(__file__, is_sample=0, coerce=parse)
         print(f"{f.__name__}:\n\t{f(data)}")

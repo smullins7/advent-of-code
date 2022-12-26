@@ -20,7 +20,7 @@ def parse_instructions(line: str):
     return parsed
 
 
-def parse_map(_map):
+def parse_map(_map) -> Dict[Tuple[int, int], str]:
     grid = {}
     for y, line in enumerate(_map):
         for x, c in enumerate(line):
@@ -135,21 +135,38 @@ class Cube:
 
 
 def parse_cube(_map: List[str], box_size: int):
+    boxes = set()
     for y, line in enumerate(_map):
         for x, c in enumerate(line):
             if c in (".", "#"):
                 pass
 
 
-def wrap_around(grid, position: Tuple[int, int], facing: str, box_size: int) -> Tuple[Tuple[int, int], str]:
+HARD_CODES = {
+    (4, 6): 17,
+    (5, 2): 5,
+    #(3, 1): 5,
+}
+
+def transpose(value: int, box_size: int) -> int:
+    return value % box_size or box_size
+
+
+def wrap_around(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facing: str, box_size: int) -> Tuple[
+    Tuple[int, int], str]:
     if facing == "up":
         # 1, 2, 3, 6
-        if position[1] == 1:  # 1 -> 5
+        if position[1] == 1:  # 1 -> 2
+            y = position[1] + box_size
+            #x =
             facing = "down"
         elif position[1] == box_size + 1 and position[0] <= box_size:  # 2 -> 1
             facing = "down"
         elif position[1] == box_size + 1:  # 3 -> 1
             facing = "right"
+            x = 9
+            y = transpose(position[0], box_size)
+            return (x, y), facing
         else:  # 6 -> 4
             facing = "left"
     elif facing == "left":
@@ -165,7 +182,10 @@ def wrap_around(grid, position: Tuple[int, int], facing: str, box_size: int) -> 
         if position[1] <= box_size:  # 1 -> 6
             facing = "left"
         if box_size < position[1] <= box_size * 2:  # 4 -> 6
+            y = 9
+            x = HARD_CODES[(4, 6)] - transpose(position[1], box_size)
             facing = "down"
+            return (x, y), facing
         else:  # 6 -> 1
             facing = "left"
     else:  # down
@@ -175,12 +195,16 @@ def wrap_around(grid, position: Tuple[int, int], facing: str, box_size: int) -> 
         elif position[0] <= box_size * 2:  # 3 -> 5
             facing = "right"
         elif position[0] <= box_size * 3:  # 5 -> 2
+            y = 8
+            x = HARD_CODES[(5, 2)] - transpose(position[0], box_size)
             facing = "up"
+            return (x, y), facing
         else:  # 6 -> 2
             facing = "up"
 
 
-def move_cube(grid, position: Tuple[int, int], facing: str, spaces: int, box_size: int) -> Tuple[int, int]:
+def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facing: str, spaces: int, box_size: int) -> \
+        Tuple[Tuple[int, int], str]:
     new_position = position
     for _ in range(spaces):
         if facing == "right":
@@ -188,51 +212,51 @@ def move_cube(grid, position: Tuple[int, int], facing: str, spaces: int, box_siz
             if grid.get((new_position[0] + 1, new_position[1])) == ".":
                 new_position = new_position[0] + 1, new_position[1]
             elif grid.get((new_position[0] + 1, new_position[1])) == "#":
-                return new_position
+                return new_position, facing
             else:
-                wrapped = wrap_around(grid, new_position, facing, box_size)
-                if grid[wrapped] == ".":
-                    new_position = wrapped
+                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                if grid[wrapped_position] == ".":
+                    new_position, facing = wrapped_position, wrapped_facing
                 else:
-                    return new_position
+                    return new_position, facing
         elif facing == "down":
             # try to move one down
             if grid.get((new_position[0], new_position[1] + 1)) == ".":
                 new_position = new_position[0], new_position[1] + 1
             elif grid.get((new_position[0], new_position[1] + 1)) == "#":
-                return new_position
+                return new_position, facing
             else:
-                wrapped = wrap_around(grid, new_position, facing, box_size)
-                if grid[wrapped] == ".":
-                    new_position = wrapped
+                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                if grid[wrapped_position] == ".":
+                    new_position, facing = wrapped_position, wrapped_facing
                 else:
-                    return new_position
+                    return new_position, facing
         elif facing == "left":
             # try to move one to the left
             if grid.get((new_position[0] - 1, new_position[1])) == ".":
                 new_position = new_position[0] - 1, new_position[1]
             elif grid.get((new_position[0] - 1, new_position[1])) == "#":
-                return new_position
+                return new_position, facing
             else:
-                wrapped = wrap_around(grid, new_position, facing, box_size)
-                if grid[wrapped] == ".":
-                    new_position = wrapped
+                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                if grid[wrapped_position] == ".":
+                    new_position, facing = wrapped_position, wrapped_facing
                 else:
-                    return new_position
+                    return new_position, facing
         else:  # up
             # try to move one up
             if grid.get((new_position[0], new_position[1] - 1)) == ".":
                 new_position = new_position[0], new_position[1] - 1
             elif grid.get((new_position[0], new_position[1] - 1)) == "#":
-                return new_position
+                return new_position, facing
             else:
-                wrapped = wrap_around(grid, new_position, facing, box_size)
-                if grid[wrapped] == ".":
-                    new_position = wrapped
+                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                if grid[wrapped_position] == ".":
+                    new_position, facing = wrapped_position, wrapped_facing
                 else:
-                    return new_position
+                    return new_position, facing
 
-    return new_position
+    return new_position, facing
 
 
 FACING = ["right", "down", "left", "up"]
@@ -269,7 +293,7 @@ def part_two(data, is_sample=True):
         elif action == "L":
             facing = FACING[(FACING.index(facing) - 1) % len(FACING)]
         else:
-            position = move_cube(grid, position, facing, action, box_size)
+            position, facing = move_cube(grid, position, facing, action, box_size)
 
     return 1000 * position[1] + (4 * position[0]) + FACING.index(facing)
 
@@ -277,5 +301,5 @@ def part_two(data, is_sample=True):
 # 200164, 97352
 if __name__ == "__main__":
     for f in (part_one, part_two):
-        data = get_grouped_input(__file__, is_sample=0)
+        data = get_grouped_input(__file__, is_sample=1)
         print(f"{f.__name__}:\n\t{f(data)}")

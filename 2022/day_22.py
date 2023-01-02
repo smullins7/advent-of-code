@@ -122,85 +122,74 @@ def move(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facing: st
     return new_position
 
 
-@dataclass
-class Box:
-    min_x: int
-    min_y: int
-    max_x: int
-    max_y: int
-
-
-class Cube:
-    pass
-
-
-def parse_cube(_map: List[str], box_size: int):
-    boxes = set()
-    for y, line in enumerate(_map):
-        for x, c in enumerate(line):
-            if c in (".", "#"):
-                pass
-
-
-HARD_CODES = {
-    (4, 6): 17,
-    (5, 2): 5,
-    #(3, 1): 5,
-}
-
-def transpose(value: int, box_size: int) -> int:
-    return value % box_size or box_size
-
-
-def wrap_around(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facing: str, box_size: int) -> Tuple[
+def wrap_around(position: Tuple[int, int], facing: str, box_size: int) -> Tuple[
     Tuple[int, int], str]:
     if facing == "up":
-        # 1, 2, 3, 6
-        if position[1] == 1:  # 1 -> 2
-            y = position[1] + box_size
-            #x =
-            facing = "down"
-        elif position[1] == box_size + 1 and position[0] <= box_size:  # 2 -> 1
-            facing = "down"
-        elif position[1] == box_size + 1:  # 3 -> 1
+        # E, B, A
+        if position[1] == 2 * box_size + 1:  # E, C
+            x = box_size + 1
+            y = position[0] + box_size
             facing = "right"
-            x = 9
-            y = transpose(position[0], box_size)
-            return (x, y), facing
-        else:  # 6 -> 4
-            facing = "left"
+        elif box_size < position[0] <= 2 * box_size:  # B, F
+            x = 1
+            y = position[0] + 2 * box_size
+            facing = "right"
+        else:  # A, F
+            x = position[0] - 2 * box_size
+            y = 4 * box_size
+            facing = "up"
     elif facing == "left":
-        # 1, 2, 5
-        if position[1] <= box_size:  # 1 -> 3
-            facing = "down"
-        elif position[0] == 1:  # 2 -> 6
-            facing = "up"
-        else:  # 5 -> 3
-            facing = "up"
-    elif facing == "right":
-        # 1, 4, 6
-        if position[1] <= box_size:  # 1 -> 6
-            facing = "left"
-        if box_size < position[1] <= box_size * 2:  # 4 -> 6
-            y = 9
-            x = HARD_CODES[(4, 6)] - transpose(position[1], box_size)
-            facing = "down"
-            return (x, y), facing
-        else:  # 6 -> 1
-            facing = "left"
-    else:  # down
-        # 2, 3, 5, 6
-        if position[0] <= box_size:  # 2 -> 5
-            facing = "up"
-        elif position[0] <= box_size * 2:  # 3 -> 5
+        # B, C, E, F
+        if position[1] <= box_size:  # B, E
+            x = 1
+            y = 3 * box_size + 1 - position[1]
             facing = "right"
-        elif position[0] <= box_size * 3:  # 5 -> 2
-            y = 8
-            x = HARD_CODES[(5, 2)] - transpose(position[0], box_size)
+        elif position[1] <= 2 * box_size:  # C, E
+            x = position[1] - box_size
+            y = 2 * box_size + 1
+            facing = "down"
+        elif position[1] <= 3 * box_size:  # E, B
+            x = box_size + 1
+            y = (box_size + 1) - (position[1] - 2 * box_size)
+            facing = "right"
+        else:  # F, B
+            x = position[1] - 2 * box_size
+            y = 1
+            facing = "down"
+    elif facing == "right":
+        # A, C, D, F
+        if position[0] == 3 * box_size:  # A, D
+            x = 2 * box_size
+            y = 3 * box_size + 1 - position[1]
+            facing = "left"
+        elif position[0] == 2 * box_size and box_size < position[1] <= 2 * box_size:  # C, A
+            x = position[1] + box_size
+            y = box_size
             facing = "up"
-            return (x, y), facing
-        else:  # 6 -> 2
+        elif position[0] == 2 * box_size:  # D, A
+            x = 3 * box_size
+            y = (box_size + 1) - (position[1] - 2 * box_size)
+            facing = "left"
+        else:  # F, D
+            x = position[1] - 2 * box_size
+            y = 3 * box_size
             facing = "up"
+    else:  # down
+        # A, D, F
+        if position[1] == box_size:  # A, C
+            x = 2 * box_size
+            y = position[0] - box_size
+            facing = "left"
+        elif position[1] == 3 * box_size:  # D, F
+            x = box_size
+            y = position[0] + 2 * box_size
+            facing = "left"
+        else:  # F, A
+            x = position[0] + 2 * box_size
+            y = 1
+            facing = "down"
+
+    return (x, y), facing
 
 
 def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facing: str, spaces: int, box_size: int) -> \
@@ -214,7 +203,7 @@ def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facin
             elif grid.get((new_position[0] + 1, new_position[1])) == "#":
                 return new_position, facing
             else:
-                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                wrapped_position, wrapped_facing = wrap_around(new_position, facing, box_size)
                 if grid[wrapped_position] == ".":
                     new_position, facing = wrapped_position, wrapped_facing
                 else:
@@ -226,7 +215,7 @@ def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facin
             elif grid.get((new_position[0], new_position[1] + 1)) == "#":
                 return new_position, facing
             else:
-                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                wrapped_position, wrapped_facing = wrap_around(new_position, facing, box_size)
                 if grid[wrapped_position] == ".":
                     new_position, facing = wrapped_position, wrapped_facing
                 else:
@@ -238,7 +227,7 @@ def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facin
             elif grid.get((new_position[0] - 1, new_position[1])) == "#":
                 return new_position, facing
             else:
-                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                wrapped_position, wrapped_facing = wrap_around(new_position, facing, box_size)
                 if grid[wrapped_position] == ".":
                     new_position, facing = wrapped_position, wrapped_facing
                 else:
@@ -250,7 +239,7 @@ def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facin
             elif grid.get((new_position[0], new_position[1] - 1)) == "#":
                 return new_position, facing
             else:
-                wrapped_position, wrapped_facing = wrap_around(grid, new_position, facing, box_size)
+                wrapped_position, wrapped_facing = wrap_around(new_position, facing, box_size)
                 if grid[wrapped_position] == ".":
                     new_position, facing = wrapped_position, wrapped_facing
                 else:
@@ -262,7 +251,7 @@ def move_cube(grid: Dict[Tuple[int, int], str], position: Tuple[int, int], facin
 FACING = ["right", "down", "left", "up"]
 
 
-def part_one(data, **kwargs):
+def part_one(data):
     _map, instructions = data
     grid = parse_map(_map)
     instructions = parse_instructions(instructions[0])
@@ -279,10 +268,9 @@ def part_one(data, **kwargs):
     return 1000 * position[1] + (4 * position[0]) + FACING.index(facing)
 
 
-def part_two(data, is_sample=True):
+def part_two(data):
     _map, instructions = data
-    box_size = 4 if is_sample else 50
-    # cube = parse_cube(_map, box_size)
+    box_size = 50
     grid = parse_map(_map)
     instructions = parse_instructions(instructions[0])
     position = find_leftmost(grid)
@@ -299,7 +287,8 @@ def part_two(data, is_sample=True):
 
 
 # 200164, 97352
+# 13236 is too low, 132144 is too high
 if __name__ == "__main__":
     for f in (part_one, part_two):
-        data = get_grouped_input(__file__, is_sample=1)
+        data = get_grouped_input(__file__, is_sample=0)
         print(f"{f.__name__}:\n\t{f(data)}")

@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from utils.binary import c_to_b
-from utils.graphs import Grid, Node, Cell, SparseValueGrid
+from utils.graphs import Grid, Node, Cell, SparseValueGrid, SparseGrid
 
 DAY_RE = re.compile(r"^.*day_(\d+)\.py$")
 
@@ -50,11 +50,20 @@ def to_grid(filename, is_sample=True, coerce=int) -> Grid:
     return grid
 
 
-def to_sparse_grid(filename, puzzle=1):
-    grid = SparseValueGrid({})
-    for y, line in enumerate(open(day_filename(filename, puzzle)).readlines()):
+def to_sparse_grid(filename, is_sample=True):
+    """
+    Parse input that assumes a grid format where "." denotes no value and any other character denotes some presence on the grid.
+    This assumes there is only one kind of non-period character on the grid. Do not use this for puzzles that would have
+    multiple different characters!
+
+    Also, assumes the x, y coordinates are meant to match an actual grid so y will be at most 0
+    """
+    grid = SparseGrid()
+    for y, line in enumerate(open(day_filename(Path(filename), is_sample)).readlines()):
         for x, c in enumerate(line.strip()):
-            grid.set(x, y, c)
+            if c == ".":
+                continue
+            grid.set(x, -y)
     return grid
 
 

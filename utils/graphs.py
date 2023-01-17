@@ -100,11 +100,18 @@ class SparseGrid:
         self.max_y = max(self.max_y, y) if self.max_y is not None else y
         self.min_y = min(self.min_y, y) if self.min_y is not None else y
 
+    def remove(self, x, y):
+        self.values.remove((x, y))
+        # TODO should recalculate min/max here...
+
     def has(self, x, y):
         return (x, y) in self.values
 
     def __iter__(self):
         return iter(self.values)
+
+    def __len__(self):
+        return len(self.values)
 
 
 @dataclass(unsafe_hash=True)

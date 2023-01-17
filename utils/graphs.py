@@ -43,30 +43,6 @@ class NDimGraph:
             print(point)
 
 
-@dataclass
-class TwoDGrid:
-    points: List[List[Any]] = field(default_factory=list)
-
-    def get_row(self, row_index):
-        return self.points[row_index]
-
-    def get_column(self, column_index):
-        return [self.points[i][column_index] for i in range(len(self.points))]
-
-    def pretty_print(self):
-        for row in self.points:
-            print(" ".join(row))
-
-    @classmethod
-    def from_file(cls, open_file: TextIO):
-        line = open_file.readline()
-        grid = TwoDGrid()
-        while line:
-            grid.points.append([x.strip() for x in line.split(" ") if x.strip()])
-            line = open_file.readline()
-        return grid
-
-
 @dataclass(unsafe_hash=True)
 class SparseValueGrid:
     values: dict
@@ -156,7 +132,14 @@ class Grid:
     A two-dimensional array, where the number of rows (y) is not assumed to equal the number of columns (x).
     x and y are never negative, so this does not resemble a numerical graph.
     """
-    rows: List[List[Cell]]
+    rows: List[List[Cell]] = field(default_factory=list)
+    max_y: int = 0
+    max_x: int = 0
+
+    def add_row(self, row: List[Cell]):
+        self.rows.append(row)
+        self.max_x = max(self.max_x, len(row) - 1)
+        self.max_y = max(self.max_y, len(self.rows) - 1)
 
     def find_neighbors(self, cell) -> List[Cell]:
         return self.find_adjacency(cell.x, cell.y)
@@ -194,13 +177,34 @@ class Grid:
 
     def as_adjacency_list(self) -> Dict[Cell, List[Cell]]:
         adjacency = {}
-        for row in self:
+        for row in self.rows:
             for cell in row:
                 adjacency[cell] = self.find_neighbors(cell)
         return adjacency
 
+    def is_on_border(self, cell: Cell):
+        return cell.x == 0 or cell.y == 0 or cell.x == self.max_x or cell.y == self.max_y
+
+    def walk_up(self, cell) -> List[Cell]:
+        for y in reversed(range(cell.y)):
+            yield self.rows[y][cell.x]
+
+    def walk_down(self, cell) -> List[Cell]:
+        for y in range(cell.y + 1, self.max_y + 1):
+            yield self.rows[y][cell.x]
+
+    def walk_left(self, cell) -> List[Cell]:
+        for x in reversed(range(cell.x)):
+            yield self.rows[cell.y][x]
+
+    def walk_right(self, cell) -> List[Cell]:
+        for x in range(cell.x + 1, self.max_x + 1):
+            yield self.rows[cell.y][x]
+
     def __iter__(self):
-        return iter(self.rows)
+        for row in self.rows:
+            for cell in row:
+                yield cell
 
 
 @dataclass

@@ -1,22 +1,18 @@
-import os
 import re
-from datetime import datetime
 from pathlib import Path
 
 from utils.binary import c_to_b
 from utils.graphs import Grid, Node, Cell, SparseValueGrid
 
 DAY_RE = re.compile(r"^.*day_(\d+)\.py$")
-BASE_PATH = Path(os.path.dirname(__file__)).parent
 
 
-def day_filename(filename, is_sample):
-    return os.path.join(BASE_PATH, str(datetime.today().year), "inputs",
-                        f"day-{DAY_RE.match(filename).group(1)}{'-sample' if is_sample else ''}.txt")
+def day_filename(filename: Path, is_sample):
+    return filename.parent / "inputs" / f"day-{DAY_RE.match(filename.name).group(1)}{'-sample' if is_sample else ''}.txt"
 
 
-def get_input(filename, is_sample=True, coerce=str):
-    parsed = [coerce(x.rstrip()) for x in open(day_filename(filename, is_sample)).readlines()]
+def get_input(filename: str, is_sample=True, coerce=str):
+    parsed = [coerce(x.rstrip()) for x in open(day_filename(Path(filename), is_sample)).readlines()]
     # some puzzle inputs are only a single line and meant to be split on some delimiter
     return parsed if len(parsed) > 1 else parsed[0]
 
@@ -48,9 +44,9 @@ def input_to_binary(filename, puzzle=1):
 
 
 def to_grid(filename, is_sample=True, coerce=int) -> Grid:
-    grid = Grid([])
-    for y, line in enumerate(open(day_filename(filename, is_sample)).readlines()):
-        grid.rows.append([Cell(x, y, coerce(c)) for x, c in enumerate(line.strip())])
+    grid = Grid()
+    for y, line in enumerate(open(day_filename(Path(filename), is_sample)).readlines()):
+        grid.add_row([Cell(x, y, coerce(c)) for x, c in enumerate(line.strip())])
     return grid
 
 

@@ -17,6 +17,10 @@ def get_input(filename: str, is_sample=True, coerce=str):
     return parsed if len(parsed) > 1 else parsed[0]
 
 
+def get_inputs(filename: str, coerce=str):
+    return get_input(filename, True, coerce), get_input(filename, False, coerce)
+
+
 def get_grouped_input(filename, is_sample=True, coerce=str):
     """Puzzle input grouped by empty lines, e.g.:
       foo

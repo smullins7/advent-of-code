@@ -36,9 +36,10 @@ def part_two(data):
 
 
 if __name__ == "__main__":
+    sample_data, real_data = get_inputs(__file__)
     for f in (part_one, part_two):
-        data = get_input(__file__, is_sample=True)
-        print(f"{f.__name__}:\n\t{f(data)}")
+        print(f"{f.__name__} sample:\n\t{f(sample_data)}")
+        print(f"{f.__name__}:\n\t{f(real_data)}")
 
 EOT
   chmod +x ${PYTHON_FILE}

@@ -27,7 +27,6 @@ def part_one(grid: Grid):
                     if is_next_to_symbol:
                         numbers.append(int("".join(current_digits)))
                         is_next_to_symbol = False
-                        #print(numbers[-1])
                     current_digits = []
     return sum(numbers)
 
@@ -36,6 +35,7 @@ def find_adjacent_gear(grid, cell):
     for neighbor in grid.find_all_adjacency(cell.x, cell.y):
         if neighbor.value == "*":
             return neighbor
+
 
 def part_two(grid):
     numbers = defaultdict(list)
@@ -55,12 +55,9 @@ def part_two(grid):
     return sum(map(lambda l: reduce(lambda x, y: x * y, l), filter(lambda l: len(l) == 2, numbers.values())))
 
 
-
-
 if __name__ == "__main__":
     sample_data = to_grid(__file__, coerce=str)
     data = to_grid(__file__, is_sample=False, coerce=str)
     for f in (part_one, part_two):
         print(f"{f.__name__} sample:\n\t{f(sample_data)}")
-        print(f"{f.__name__} sample:\n\t{f(data)}") #  526860 too low
-
+        print(f"{f.__name__} sample:\n\t{f(data)}")  # 526860 too low

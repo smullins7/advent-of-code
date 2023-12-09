@@ -235,3 +235,15 @@ class Node:
 
     def __iter__(self):
         return iter(self.neighbors)
+
+
+@dataclass
+class TwoDirectionNode:
+    value: str
+    left: str
+    right: str
+
+    def go(self, direction):
+        if direction == "L":
+            return self.left
+        return self.right

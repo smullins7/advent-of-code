@@ -21,6 +21,9 @@ def get_inputs(filename: str, coerce=str):
     return get_input(filename, True, coerce), get_input(filename, False, coerce)
 
 
+def get_grouped_inputs(filename: str, coerce=str):
+    return get_grouped_input(filename, True, coerce), get_grouped_input(filename, False, coerce)
+
 def get_grouped_input(filename, is_sample=True, coerce=str):
     """Puzzle input grouped by empty lines, e.g.:
       foo
@@ -31,7 +34,7 @@ def get_grouped_input(filename, is_sample=True, coerce=str):
     """
     groups = []
     group = []
-    for x in open(day_filename(filename, is_sample)).readlines():
+    for x in open(day_filename(Path(filename), is_sample)).readlines():
         x = x.rstrip()
         if not x:
             groups.append(group)

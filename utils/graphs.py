@@ -213,7 +213,13 @@ class Grid:
             for cell in row:
                 yield cell
 
+    def slice_column_values(self, column_index: int):
+        for row in self.rows:
+            yield row[column_index].value
 
+    def slice_row_values(self, row_index: int):
+        for cell in self.rows[row_index]:
+            yield cell.value
 @dataclass
 class Node:
     value: str

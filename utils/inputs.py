@@ -50,6 +50,8 @@ def input_to_binary(filename, puzzle=1):
     return "".join([c_to_b(c) for c in open(day_filename(filename, puzzle)).readline().strip()])
 
 
+def get_grids(filename: str, coerce=str):
+    return to_grid(filename, True, coerce), to_grid(filename, False, coerce)
 def to_grid(filename, is_sample=True, coerce=int) -> Grid:
     grid = Grid()
     for y, line in enumerate(open(day_filename(Path(filename), is_sample)).readlines()):

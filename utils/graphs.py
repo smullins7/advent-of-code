@@ -143,6 +143,9 @@ class Grid:
     max_y: int = 0
     max_x: int = 0
 
+    def cell_at(self, x, y) -> Cell:
+        return self.rows[y][x]
+
     def add_row(self, row: List[Cell]):
         self.rows.append(row)
         self.max_x = max(self.max_x, len(row) - 1)
@@ -213,6 +216,21 @@ class Grid:
             for cell in row:
                 yield cell
 
+    def iter_from_left(self):
+        for column_index in range(self.max_y + 1):
+            for row in self.rows:
+                yield row[column_index]
+
+    def iter_from_right(self):
+        for column_index in reversed(range(self.max_y + 1)):
+            for row in self.rows:
+                yield row[column_index]
+
+    def iter_from_bottom(self):
+        for row in reversed(self.rows):
+            for cell in row:
+                yield cell
+
     def slice_column_values(self, column_index: int):
         for row in self.rows:
             yield row[column_index].value
@@ -220,6 +238,16 @@ class Grid:
     def slice_row_values(self, row_index: int):
         for cell in self.rows[row_index]:
             yield cell.value
+
+    def __str__(self):
+        buff = []
+        for row in self.rows:
+            buff.append("".join([str(cell.value) for cell in row]))
+        return "\n".join(buff)
+
+    def __hash__(self):
+        return hash(tuple(c.value for c in self))
+
 @dataclass
 class Node:
     value: str

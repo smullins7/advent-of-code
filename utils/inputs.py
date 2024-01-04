@@ -24,6 +24,7 @@ def get_inputs(filename: str, coerce=str):
 def get_grouped_inputs(filename: str, coerce=str):
     return get_grouped_input(filename, True, coerce), get_grouped_input(filename, False, coerce)
 
+
 def get_grouped_input(filename, is_sample=True, coerce=str):
     """Puzzle input grouped by empty lines, e.g.:
       foo
@@ -52,6 +53,8 @@ def input_to_binary(filename, puzzle=1):
 
 def get_grids(filename: str, coerce=str):
     return to_grid(filename, True, coerce), to_grid(filename, False, coerce)
+
+
 def to_grid(filename, is_sample=True, coerce=int) -> Grid:
     grid = Grid()
     for y, line in enumerate(open(day_filename(Path(filename), is_sample)).readlines()):

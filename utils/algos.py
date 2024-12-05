@@ -39,18 +39,29 @@ def shortest_path(grid: Grid, start: Cell, at_end: (), can_traverse=lambda node,
             explored.append(node)
 
 
-def f(p, n, item):
-    l = []
-    for _ in range(n):
-        back = p[item]
-        l.append(back)
-        item = back
-    return l
+def dijkstra_algorithm(grid: Grid, start_node):
+    unvisited_nodes = [(start_node, "X", 0)]
+    for cell in grid:
+        if cell == start_node:
+            continue
+        for direction in ("U", "D", "L", "R"):
+            for i in range(1, 4):
+                if direction == "U":
+                    if len(list(grid.walk_down(cell))) < i:
+                        continue
 
+                if direction == "D":
+                    if len(list(grid.walk_up(cell))) < i:
+                        continue
 
-def dijkstra_algorithm(adjacency: Dict[Cell, List[Cell]], start_node,
-                       can_traverse=lambda cell, neighbor, previous_nodes: True):
-    unvisited_nodes = list(adjacency.keys())
+                if direction == "L":
+                    if len(list(grid.walk_right(cell))) < i:
+                        continue
+
+                if direction == "R":
+                    if len(list(grid.walk_left(cell))) < i:
+                        continue
+                unvisited_nodes.append((cell, direction, i))
 
     # We'll use this dict to save the cost of visiting each node and update it as we move along the graph
     shortest_path = {}
@@ -62,8 +73,22 @@ def dijkstra_algorithm(adjacency: Dict[Cell, List[Cell]], start_node,
     max_value = sys.maxsize
     for node in unvisited_nodes:
         shortest_path[node] = max_value
-    shortest_path[start_node] = 0
+    shortest_path[(start_node, "X", 0)] = 0
 
+    def get_direction(a: Cell, b: Cell) -> str:
+        if a.x == b.x and a.y > b.y:
+            return "U"
+        if a.x == b.x:
+            return "D"
+        if a.x > b.x:
+            return "L"
+        return "R"
+
+    def is_legal_dir(previous, current) -> bool:
+        d = {"U": "D", "D": "U", "L": "R", "R": "L", "X": ""}
+        return d[previous] != current
+
+    print(len(unvisited_nodes))
     while unvisited_nodes:
         current_min_node = None
         for node in unvisited_nodes:
@@ -72,21 +97,24 @@ def dijkstra_algorithm(adjacency: Dict[Cell, List[Cell]], start_node,
             elif shortest_path[node] < shortest_path[current_min_node]:
                 current_min_node = node
 
-        for neighbor in adjacency[current_min_node]:
+        node, direction, steps = current_min_node
+        for neighbor in grid.find_neighbors(node):
+            # skip if neighbor is in same direction and steps is already at 3
+            next_direction = get_direction(node, neighbor)
+            if not is_legal_dir(direction, next_direction) or neighbor == start_node or (next_direction == direction and steps == 3):
+                continue
+            steps_in_direction = 1 if next_direction != direction else steps + 1
             tentative_value = shortest_path[current_min_node] + neighbor.value
-            if tentative_value < shortest_path[neighbor]:
-                if not can_traverse(current_min_node, neighbor, previous_nodes):
-                    backup = f(previous_nodes, 3, current_min_node)
-
-                    # compare that to...backing up to the start of the straight line?
-                    # then somehow fix my previous nodes and shortest paths if backing up is shorter
-                    continue
-                shortest_path[neighbor] = tentative_value
+            _next = (neighbor, next_direction, steps_in_direction)
+            if tentative_value < shortest_path[_next]:
+                shortest_path[_next] = tentative_value
                 # We also update the best path to the current node
-                previous_nodes[neighbor] = current_min_node
+                previous_nodes[_next] = current_min_node
 
         # After visiting its neighbors, we mark the node as "visited"
         unvisited_nodes.remove(current_min_node)
+        if len(unvisited_nodes) % 1000 == 0:
+            print(len(unvisited_nodes))
 
     return previous_nodes, shortest_path
 

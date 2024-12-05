@@ -162,6 +162,9 @@ class Grid:
     def cell_at(self, x, y) -> Cell:
         return self.rows[y][x]
 
+    def has(self, x, y) -> bool:
+        return 0 <= y <= self.max_y and 0 <= x <= self.max_x
+
     def add_row(self, row: List[Cell]):
         self.rows.append(row)
         self.max_x = max(self.max_x, len(row) - 1)

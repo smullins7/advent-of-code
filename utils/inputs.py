@@ -1,11 +1,11 @@
 import re
 from pathlib import Path
+from typing import Tuple
 
 from utils.binary import c_to_b
 from utils.graphs import Grid, Node, Cell, SparseValueGrid, SparseGrid
 
 DAY_RE = re.compile(r"^.*day_(\d+)\.py$")
-
 
 def day_filename(filename: Path, is_sample):
     return filename.parent / "inputs" / f"day-{DAY_RE.match(filename.name).group(1)}{'-sample' if is_sample else ''}.txt"
@@ -51,7 +51,7 @@ def input_to_binary(filename, puzzle=1):
     return "".join([c_to_b(c) for c in open(day_filename(filename, puzzle)).readline().strip()])
 
 
-def get_grids(filename: str, coerce=str):
+def get_grids(filename: str, coerce=str) -> Tuple[Grid, Grid]:
     return to_grid(filename, True, coerce), to_grid(filename, False, coerce)
 
 
@@ -93,3 +93,6 @@ def to_nodes(filename, puzzle=1) -> Node:
         right_node = _get(right)
         left_node.add_path(right_node)
     return nodes["start"]
+
+def to_numbers(s: str):
+    return [int(n) for n in s.split()]

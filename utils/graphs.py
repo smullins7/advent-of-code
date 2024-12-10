@@ -134,7 +134,7 @@ class SparseGrid:
 class Cell:
     x: int
     y: int
-    value: Any
+    value: Any = "."
 
     def __lt__(self, other):
         return self.value < other.value
@@ -161,6 +161,9 @@ class Grid:
 
     def cell_at(self, x, y) -> Cell:
         return self.rows[y][x]
+
+    def has_cell(self, cell: Cell) -> bool:
+        return self.has(cell.x, cell.y)
 
     def has(self, x, y) -> bool:
         return 0 <= y <= self.max_y and 0 <= x <= self.max_x

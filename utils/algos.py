@@ -1,6 +1,6 @@
 import sys
 from itertools import pairwise
-from typing import List, Dict, Tuple, Iterable
+from typing import Tuple, Iterable
 
 from utils.graphs import Grid, Cell
 
@@ -37,6 +37,30 @@ def shortest_path(grid: Grid, start: Cell, at_end: (), can_traverse=lambda node,
                     if at_end(neighbor):
                         return new_path
             explored.append(node)
+
+def accumulate_paths(grid: Grid, start: Cell, at_end: (), can_traverse=lambda node, neighbor, path: True):
+    """
+    This function is modeled off the above shortest path algorithm, however it accumulates all possible
+    valid paths and returns them
+    """
+    valid_paths = []
+
+    queue = [[start]]
+
+    while queue:
+        path = queue.pop(0)
+        node = path[-1]
+
+        neighbors = grid.find_neighbors(node)
+
+        for neighbor in neighbors:
+            if can_traverse(node, neighbor, path):
+                new_path = list(path) + [neighbor]
+                queue.append(new_path)
+
+                if at_end(neighbor):
+                    valid_paths.append(new_path)
+    return valid_paths
 
 
 def dijkstra_algorithm(grid: Grid, start_node):

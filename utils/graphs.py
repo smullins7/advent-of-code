@@ -168,6 +168,9 @@ class Grid:
     def has(self, x, y) -> bool:
         return 0 <= y <= self.max_y and 0 <= x <= self.max_x
 
+    def find_all_with(self, value: any) -> list[Cell]:
+        return list(filter(lambda cell: cell.value == value, self))
+
     def add_row(self, row: List[Cell]):
         self.rows.append(row)
         self.max_x = max(self.max_x, len(row) - 1)

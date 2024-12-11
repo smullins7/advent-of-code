@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from typing import Tuple
 
-from utils.binary import c_to_b
+from utils.numbers import c_to_b
 from utils.graphs import Grid, Node, Cell, SparseValueGrid, SparseGrid
 
 DAY_RE = re.compile(r"^.*day_(\d+)\.py$")

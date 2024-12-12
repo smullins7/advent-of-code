@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Optional
 
 
 @dataclass
@@ -176,6 +177,20 @@ class Grid:
         self.max_x = max(self.max_x, len(row) - 1)
         self.max_y = max(self.max_y, len(self.rows) - 1)
 
+    def find_neighbor(self, cell: Cell, direction: str) -> Optional[Cell]:
+        if direction == "U":
+            if cell.y != 0:
+                return self.cell_at(cell.x, cell.y - 1)
+        elif direction == "D":
+            if cell.y != self.max_y:
+                return self.cell_at(cell.x, cell.y + 1)
+        elif direction == "L":
+            if cell.x != 0:
+                return self.cell_at(cell.x - 1, cell.y)
+        elif direction == "R":
+            if cell.x != self.max_x:
+                return self.cell_at(cell.x + 1, cell.y)
+
     def find_neighbors(self, cell) -> List[Cell]:
         return self.find_adjacency(cell.x, cell.y)
 
@@ -226,6 +241,11 @@ class Grid:
     def is_on_border(self, cell: Cell):
         return cell.x == 0 or cell.y == 0 or cell.x == self.max_x or cell.y == self.max_y
 
+    def border_count(self, cell: Cell):
+        if not self.is_on_border(cell):
+            return 0
+        return int(cell.x == 0) + int(cell.y == 0) + int(cell.x == self.max_x) + int(cell.y == self.max_y)
+
     def walk_up(self, cell) -> List[Cell]:
         for y in reversed(range(cell.y)):
             yield self.rows[y][cell.x]
@@ -241,6 +261,16 @@ class Grid:
     def walk_right(self, cell) -> List[Cell]:
         for x in range(cell.x + 1, self.max_x + 1):
             yield self.rows[cell.y][x]
+
+    def walk(self, cell, direction) -> Iterator[Cell]:
+        if direction == "U":
+            yield from self.walk_up(cell)
+        elif direction == "D":
+            yield from self.walk_down(cell)
+        elif direction == "L":
+            yield from self.walk_left(cell)
+        elif direction == "R":
+            yield from self.walk_right(cell)
 
     def __iter__(self):
         for row in self.rows:

@@ -178,16 +178,16 @@ class Grid:
         self.max_y = max(self.max_y, len(self.rows) - 1)
 
     def find_neighbor(self, cell: Cell, direction: str) -> Optional[Cell]:
-        if direction == "U":
+        if direction in ("U", "^"):
             if cell.y != 0:
                 return self.cell_at(cell.x, cell.y - 1)
-        elif direction == "D":
+        elif direction in ("D", "v"):
             if cell.y != self.max_y:
                 return self.cell_at(cell.x, cell.y + 1)
-        elif direction == "L":
+        elif direction in ("L", "<"):
             if cell.x != 0:
                 return self.cell_at(cell.x - 1, cell.y)
-        elif direction == "R":
+        elif direction in ("R", ">"):
             if cell.x != self.max_x:
                 return self.cell_at(cell.x + 1, cell.y)
 

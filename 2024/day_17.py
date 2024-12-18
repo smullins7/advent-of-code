@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from doctest import debug
 
@@ -121,7 +122,7 @@ def part_two_junk(data):
     """
     # 2,4,1,2,7,5,4,3,0,3,1,7,5,5,3,0
     #                          1   4    2
-    a_binary = "1 010 011 110 000 001 111"
+    a_binary = "1010011110000001111"
 
     to_try = [a_binary]
     while to_try:
@@ -134,17 +135,17 @@ def part_two_junk(data):
         }
 
         computron = Computer(program, registers)
-        computron.run()
+        try:
+            computron.run()
+        except OverflowError:
+            print("too big...")
+            continue
         if program == computron.outputs:
             print(a)
             return
         elif program[:len(computron.outputs)] == computron.outputs:
-            print(a, computron.outputs)
-            to_try.append("10" + a_bin)
-            to_try.append("1" + a_bin)
-        else:
-            #print(a, computron.outputs)
-            to_try.append("10" + a_bin)
+            print(computron.outputs)
+            to_try.append("0" + a_bin)
             to_try.append("1" + a_bin)
 
 
@@ -152,15 +153,41 @@ def part_two(data):
     register_lines, program_lines = data
     program = parse_program(program_lines[0])
 
-    registers = {
-        'A': 26410655952655,#15971332018,#179274775408,
-        'B': 0,
-        'C': 0,
-    }
+    options = defaultdict(list)
+    for n in program:
+        for this_byte, next_byte in try_to_get_back(n):
+            if this_byte not in options:
+                options[this_byte].append(next_byte)
+                continue
+            for k, bs in options.items():
+                if bs[-1] == this_byte:
+                    options[k].append(next_byte)
 
-    computron = Computer(program, registers)
-    computron.run()
-    print(computron.outputs)
+    print(program)
+    for first, rest in options.items():
+        buf = []
+        for n in reversed([first] + rest):
+            buf.append(format(n, "b").zfill(3))
+
+        a = int("".join(buf), 2)
+        registers = {
+            'A': a,
+            'B': 0,
+            'C': 0,
+        }
+
+        computron = Computer(program, registers)
+        computron.run()
+        print(a, computron.outputs)
+
+def try_to_get_back(n):
+    for i in range(0,8):
+        for j in range(0, 8):
+            b = i ^ 2
+            b = b ^ j
+            b = b ^ 7
+            if b % 8 == n:
+                yield i, j
 
 if __name__ == "__main__":
     sample_data, real_data = get_grouped_inputs(__file__)

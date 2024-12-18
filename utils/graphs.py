@@ -88,21 +88,21 @@ class SparseValueGrid:
 
 @dataclass(unsafe_hash=True)
 class SparseGrid:
-    values: dict = field(default_factory=lambda: dict())
+    values: set = field(default_factory=set)
     max_x: int = None
     max_y: int = None
     min_x: int = None
     min_y: int = None
 
     def set(self, x, y):
-        self.values[(x, y)] = None
+        self.values.add((x, y))
         self.max_x = max(self.max_x, x) if self.max_x is not None else x
         self.min_x = min(self.min_x, x) if self.min_x is not None else x
         self.max_y = max(self.max_y, y) if self.max_y is not None else y
         self.min_y = min(self.min_y, y) if self.min_y is not None else y
 
     def remove(self, x, y):
-        self.values.pop((x, y))
+        self.values.remove((x, y))
         self.max_x = None
         self.max_y = None
         self.min_x = None
@@ -124,7 +124,7 @@ class SparseGrid:
 
     def __str__(self):
         buf = []
-        for y in reversed(range(self.min_y, self.max_y + 1)):
+        for y in range(self.min_y, self.max_y + 1):
             for x in range(self.min_x, self.max_x + 1):
                 buf.append("#" if self.has(x, y) else ".")
             buf.append("\n")

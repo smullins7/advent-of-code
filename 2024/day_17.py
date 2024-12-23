@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from doctest import debug
+from itertools import permutations
 
 from utils.inputs import get_grouped_inputs
 
@@ -66,8 +67,6 @@ class Computer:
                 self.registers['B'] = self.registers['B'] ^ self.registers['C']
             case 5: #out
                 self.outputs.append(self.get_combo_value(operand) % 8)
-                if self.expect and self.outputs[-1] != self.instructions[len(self.outputs) - 1]:
-                    self.stop = True
             case 6: #bvd
                 self.registers['B'] = _div()
             case 7: #cdv
@@ -81,6 +80,7 @@ def part_one(data):
     program = parse_program(program_lines[0])
     computron = Computer(program, registers)
     computron.run()
+    return computron.outputs
 
 def part_two_dig(data):
     register_lines, program_lines = data
@@ -113,6 +113,9 @@ def part_two_junk(data):
     # B = B ^ 7 -> +/- 7
     # output B % 8 -> last 3 bits
 
+    """
+    101 
+    """
 
     """
     C = A / (2**B)
@@ -149,36 +152,66 @@ def part_two_junk(data):
             to_try.append("1" + a_bin)
 
 
-def part_two(data):
+def part_two_abandon(data):
     register_lines, program_lines = data
     program = parse_program(program_lines[0])
 
-    options = defaultdict(list)
-    for n in program:
-        for this_byte, next_byte in try_to_get_back(n):
-            if this_byte not in options:
-                options[this_byte].append(next_byte)
-                continue
-            for k, bs in options.items():
-                if bs[-1] == this_byte:
-                    options[k].append(next_byte)
+    todo = [(list(reversed(program)), 0, [])]
+    answers = []
+    while todo:
+        nums_to_print, previous, acc = todo.pop(0)
+        to_print = nums_to_print.pop(0)
 
-    print(program)
-    for first, rest in options.items():
-        buf = []
-        for n in reversed([first] + rest):
-            buf.append(format(n, "b").zfill(3))
+        for possible in eightbit(previous, to_print):
+            copy = list(acc)
+            copy.append(possible)
+            if nums_to_print:
+                todo.append((list(nums_to_print), possible, copy))
+            else:
+                answers.append(int("".join([format(n, "03b") for n in copy]), 2))
+        else:
+            with_zero = list(eightbit(0, to_print))
+            if with_zero:
+                copy = list(acc)
+                copy.append(0)
+                copy.append(with_zero[0])
+                if nums_to_print:
+                    todo.append((list(nums_to_print), with_zero[0], copy))
+                else:
+                    answers.append(int("".join([format(n, "03b") for n in copy]), 2))
+            else:
+                print("who knows")
 
-        a = int("".join(buf), 2)
-        registers = {
+    for a in answers:
+        computron = Computer(program, {
             'A': a,
             'B': 0,
             'C': 0,
-        }
-
-        computron = Computer(program, registers)
+        })
         computron.run()
-        print(a, computron.outputs)
+        if computron.outputs == program:
+            print(a)
+            return a
+
+    return "im done"
+
+def part_two(data):
+    def to_n(l):
+        return int("".join([format(n, "03b") for n in l]), 2)
+    register_lines, program_lines = data
+    program = parse_program(program_lines[0])
+    start =[5, 3, 2, 2, 3]
+    end =[0, 1, 2, 3, 6, 0, 1, 7]
+    for i in range(10):
+        print("trying ", i)
+        for to_try in permutations(range(8), i):
+            a = to_n(start + list(to_try) + end)
+            c = Computer(program, {'A': a, 'B': 0, 'C': 0})
+            c.run()
+            if c.outputs == program:
+                return a
+
+    return "I give up"
 
 def try_to_get_back(n):
     for i in range(0,8):
@@ -189,12 +222,27 @@ def try_to_get_back(n):
             if b % 8 == n:
                 yield i, j
 
+
+def eightbit(previous: int, need_to_print: int):
+    # B = A % 8 -> last 3 bits
+    # B = B ^ 2 -> +/- 2
+    # C = A / (2 ** B) -> big num
+    # B = B ^ C -> big num +/- B
+    # A = A / 8 -> lose last 3 bits
+    # B = B ^ 7 -> +/- 7
+    # output B % 8 -> last 3 bits
+    for i in range(8):
+        a = int(format(previous, "03b") + format(i, "03b"), 2)
+        b = a % 8
+        b = b ^ 2
+        c = int(a / (2**b))
+        b = b ^ c
+        b = b ^ 7
+        if b % 8 == need_to_print:
+            yield i
+
 if __name__ == "__main__":
     sample_data, real_data = get_grouped_inputs(__file__)
     for f in (part_one, part_two):
         #print(f"{f.__name__} sample:\n\t{f(sample_data)}")
         print(f"{f.__name__}:\n\t{f(real_data)}")
-        # 375340240026639
-        # 1501612567510031
-        # 1537922383035407
-        # 9223372036854775807

@@ -2,8 +2,8 @@ import re
 from pathlib import Path
 from typing import Tuple
 
+from utils.graphs import Grid, Node, Cell, SparseGrid
 from utils.numbers import c_to_b
-from utils.graphs import Grid, Node, Cell, SparseValueGrid, SparseGrid
 
 DAY_RE = re.compile(r"^.*day_(\d+)\.py$")
 
@@ -21,11 +21,11 @@ def get_inputs(filename: str, coerce=str):
     return get_input(filename, True, coerce), get_input(filename, False, coerce)
 
 
-def get_grouped_inputs(filename: str, coerce=str):
+def get_grouped_inputs(filename: str, coerce=str) -> tuple[list[list], list[list]]:
     return get_grouped_input(filename, True, coerce), get_grouped_input(filename, False, coerce)
 
 
-def get_grouped_input(filename, is_sample=True, coerce=str):
+def get_grouped_input(filename, is_sample=True, coerce=str) -> list[list]:
     """Puzzle input grouped by empty lines, e.g.:
       foo
       bar

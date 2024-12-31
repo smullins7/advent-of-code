@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Set, Optional
+from typing import Any, Dict, List, Set, Optional, Self
 
 
 @dataclass
@@ -136,6 +136,14 @@ class Cell:
     x: int
     y: int
     value: Any = "."
+
+    def get_direction(self, to_cell: Self) -> str:
+        if self.x == to_cell.x:
+            return "D" if to_cell.y > self.y else "U"
+        return "R" if to_cell.x > self.x else "L"
+
+    def get_distance(self, to_cell: Self) -> int:
+        return abs(self.x - to_cell.x) + abs(self.y - to_cell.y)
 
     def __lt__(self, other):
         return self.value < other.value

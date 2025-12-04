@@ -208,7 +208,7 @@ class Grid:
     def find_diagonal_neighbors(self, cell: Cell) -> list[Cell]:
         return self.find_diagonal_adjacency(cell.x, cell.y)
 
-    def find_all_neighbors(self, cell) -> List[Cell]:
+    def find_all_neighbors(self, cell: Cell) -> List[Cell]:
         return self.find_all_adjacency(cell.x, cell.y)
 
     def find_adjacency(self, x, y) -> List[Cell]:

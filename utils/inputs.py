@@ -7,6 +7,7 @@ from utils.numbers import c_to_b
 
 DAY_RE = re.compile(r"^.*day_(\d+)\.py$")
 
+
 def day_filename(filename: Path, is_sample):
     return filename.parent / "inputs" / f"day-{DAY_RE.match(filename.name).group(1)}{'-sample' if is_sample else ''}.txt"
 
@@ -93,6 +94,7 @@ def to_nodes(filename, puzzle=1) -> Node:
         right_node = _get(right)
         left_node.add_path(right_node)
     return nodes["start"]
+
 
 def to_numbers(s: str):
     return [int(n) for n in s.split()]

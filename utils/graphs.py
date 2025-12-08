@@ -43,6 +43,13 @@ class NDimGraph:
         for point in self.points.values():
             print(point)
 
+    def __iter__(self):
+        for position in self.points:
+            yield position
+
+    def __len__(self):
+        return len(self.points)
+
 
 @dataclass(unsafe_hash=True)
 class SparseValueGrid:
@@ -310,6 +317,12 @@ class Grid:
     def slice_row_values(self, row_index: int):
         for cell in self.rows[row_index]:
             yield cell.value
+
+    def clone(self) -> 'Grid':
+        grid = Grid()
+        for row in self.rows:
+            grid.add_row([Cell(c.x, c.y, c.value) for c in row])
+        return grid
 
     def __str__(self):
         buff = []

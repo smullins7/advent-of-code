@@ -5,8 +5,7 @@ from utils.inputs import get_inputs
 
 
 def distance(position_a, position_b):
-    return math.sqrt((position_a[0] - position_b[0]) ** 2 + (position_a[1] - position_b[1]) ** 2 + (
-            position_a[2] - position_b[2]) ** 2)
+    return math.sqrt(sum([(p - q) ** 2 for p, q in zip(position_a, position_b)]))
 
 
 def get_circuit(circuits: list, position):

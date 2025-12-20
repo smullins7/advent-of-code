@@ -1,3 +1,4 @@
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Set, Optional, Self
@@ -7,6 +8,9 @@ from typing import Any, Dict, List, Set, Optional, Self
 class NDimPoint:
     position: tuple
     value: Any = None
+
+    def distance_from(self, other) -> float:
+        return math.sqrt(sum([(p - q) ** 2 for p, q in zip(self.position, other.position)]))
 
     def __hash__(self):
         return hash(self.position)
